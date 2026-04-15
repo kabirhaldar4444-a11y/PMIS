@@ -98,6 +98,8 @@ const Users = () => {
 
   const handleUpdateProfile = async (updatedData) => {
     try {
+      const { password, ...profileFields } = updatedData;
+      
       // ROBUST CLEANUP: Explicitly only send columns that exist in the profiles table
       const allowedProfileColumns = [
         'full_name', 'phone', 'address', 'state', 'city', 
@@ -868,9 +870,10 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                 ) : (
                   <div className="space-y-6">
                     {submissions.map(sub => {
-                      const finalScore = getSubValue(sub, 'admin_score_override') ?? sub.score;
-                      const isModified = getSubValue(sub, 'admin_score_override') !== null && getSubValue(sub, 'admin_score_override') !== sub.score;
-                      const isReleased = getSubValue(sub, 'is_released');
+                      const currentScore = getSubValue(sub, 'admin_score_override') ?? sub.score;
+                      const isCurrentlyReleased = getSubValue(sub, 'is_released');
+                      const hasChanges = (getSubValue(sub, 'admin_score_override') !== sub.score && getSubValue(sub, 'admin_score_override') !== undefined) || 
+                                        (getSubValue(sub, 'is_released') !== sub.is_released);
 
                       return (
                         <div key={sub.id} className="bg-white p-8 rounded-3xl border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
@@ -881,7 +884,7 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                             <div>
                                <div className="flex items-center gap-3 mb-1">
                                  <h4 className="font-black text-xl text-slate-800 leading-none">{sub.exams?.title || 'Examination'}</h4>
-                                 {isModified && <span className="px-2 py-0.5 bg-amber-100 text-amber-600 text-[10px] font-black uppercase rounded shadow-sm">MODIFIED</span>}
+                                 {hasChanges && <span className="px-2 py-0.5 bg-amber-100 text-amber-600 text-[10px] font-black uppercase rounded shadow-sm">PENDING SAVE</span>}
                                </div>
                                <p className="text-xs text-slate-500 font-medium tracking-tight">
                                   Original System Score: <strong className="text-slate-800">{sub.score} / {sub.total_questions}</strong>
@@ -894,19 +897,33 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                                <div className="flex items-center gap-6 mb-2">
                                   <div className="text-center">
                                      <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 block mb-1">FINAL MARKS</label>
-                                     <div className="flex items-center bg-slate-50 rounded-full border-2 border-slate-100 p-1">
-                                       <button onClick={() => handleAdjustMark(sub, -1)} className="w-8 h-8 rounded-full hover:bg-white hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-bold text-lg">-</button>
+                                     <div className="flex items-center bg-slate-50 rounded-full border-2 border-slate-100 p-1 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400/50 transition-all">
+                                       <button onClick={() => handleAdjustMark(sub, -1)} className="w-8 h-8 rounded-full hover:bg-white hover:text-blue-600 hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-black text-lg">-</button>
                                        <input 
                                          type="number" 
-                                         className="w-12 text-center bg-transparent font-black text-xl text-slate-800 focus:outline-none"
-                                         value={finalScore}
-                                         onChange={(e) => updateSubChange(sub.id, 'admin_score_override', Math.max(0, Math.min(sub.total_questions, parseInt(e.target.value) || 0)))}
+                                         className="w-16 text-center bg-transparent font-black text-xl text-slate-800 focus:outline-none placeholder:text-slate-300"
+                                         placeholder="0"
+                                         value={currentScore === 0 ? '0' : (currentScore || '')}
+                                         onChange={(e) => {
+                                           const val = e.target.value;
+                                           if (val === '') {
+                                             updateSubChange(sub.id, 'admin_score_override', 0);
+                                           } else {
+                                             const num = parseInt(val);
+                                             if (!isNaN(num)) {
+                                               updateSubChange(sub.id, 'admin_score_override', Math.max(0, Math.min(sub.total_questions, num)));
+                                             }
+                                           }
+                                         }}
                                        />
-                                       <button onClick={() => handleAdjustMark(sub, 1)} className="w-8 h-8 rounded-full hover:bg-white hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-bold text-lg">+</button>
+                                       <button onClick={() => handleAdjustMark(sub, 1)} className="w-8 h-8 rounded-full hover:bg-white hover:text-blue-600 hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-black text-lg">+</button>
                                      </div>
                                   </div>
-                                  {isModified && (
-                                    <button onClick={() => updateSubChange(sub.id, 'admin_score_override', null)} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 transition-colors mt-2">RESTORE DEFAULT</button>
+                                  {hasChanges && (
+                                    <button onClick={() => {
+                                      updateSubChange(sub.id, 'admin_score_override', sub.score);
+                                      updateSubChange(sub.id, 'is_released', sub.is_released);
+                                    }} className="text-[10px] font-black uppercase tracking-widest text-[#94a3b8] hover:text-blue-500 transition-all mt-2 underline underline-offset-4">Reset Changes</button>
                                   )}
                                </div>
                             </div>
@@ -916,14 +933,18 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                                   <Eye className="w-4 h-4 group-hover:text-blue-500 transition-colors" /> Question Breakdowns
                                </button>
                                <button 
-                                 onClick={() => updateSubChange(sub.id, 'is_released', !isReleased)}
-                                 className={`px-6 py-3 font-bold rounded-2xl transition-all text-xs flex items-center justify-center gap-2 shadow-lg ${
-                                   isReleased 
-                                     ? 'bg-emerald-500 text-white shadow-emerald-500/20 hover:bg-emerald-600' 
-                                     : 'bg-slate-800 text-white shadow-slate-800/20 hover:bg-slate-900'
+                                 onClick={() => updateSubChange(sub.id, 'is_released', !isCurrentlyReleased)}
+                                 className={`px-6 py-3 font-black rounded-2xl transition-all text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 ${
+                                   isCurrentlyReleased 
+                                     ? 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600 ring-2 ring-emerald-500/20' 
+                                     : 'bg-slate-900 text-white shadow-slate-900/30 hover:bg-slate-800'
                                  }`}
                                >
-                                  {isReleased ? <><CheckCircle className="w-4 h-4" /> Result Live</> : <><Send className="w-4 h-4" /> Publish Result</>}
+                                  {isCurrentlyReleased ? (
+                                    <><CheckCircle className="w-4 h-4" /> Result Live</>
+                                  ) : (
+                                    <><Send className="w-4 h-4" /> Publish Result</>
+                                  )}
                                </button>
                             </div>
                           </div>

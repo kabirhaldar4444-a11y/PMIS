@@ -14,6 +14,7 @@ import Users from './pages/admin/Users';
 import ManageQuestions from './pages/admin/ManageQuestions';
 import UserSubmissions from './pages/admin/UserSubmissions';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
+import Profile from './pages/candidate/Profile';
 
 function App() {
   const isConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -51,6 +52,12 @@ function App() {
           <Route path="/complete-profile" element={
             <ProtectedRoute roleRequired="candidate" allowIncomplete={true}>
               <CompleteProfile />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/profile" element={
+            <ProtectedRoute roleRequired="candidate">
+              <Profile />
             </ProtectedRoute>
           } />
           

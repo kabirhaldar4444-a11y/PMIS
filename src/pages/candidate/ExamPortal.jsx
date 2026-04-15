@@ -296,40 +296,40 @@ const ExamPortal = () => {
   return (
     <div className="flex flex-col bg-slate-50 select-none page-transition">
 
-      {/* Top Navigation Strip */}
-      <header className="fixed top-0 left-0 right-0 z-[100] px-6 py-4">
-        <div className="max-w-7xl mx-auto glass-navbar rounded-full px-8 py-3 flex items-center justify-between shadow-2xl">
+      {/* Slim Top Navigation Strip */}
+      <header className="fixed top-0 left-0 right-0 z-[100] px-4 py-3">
+        <div className="max-w-7xl mx-auto bg-white/80 backdrop-blur-2xl border border-white/50 rounded-full px-6 py-2 flex items-center justify-between shadow-xl">
           <div className="flex items-center">
-            <PMISLogo size={36} />
+            <PMISLogo variant="navbar" />
           </div>
 
           <button 
             onClick={() => handleSubmit()}
             disabled={submitting}
-            className="btn-premium !py-2.5 !px-8 !text-sm !shadow-primary-500/20"
+            className="px-6 py-2 bg-blue-600 text-white rounded-full text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
           >
-            {submitting ? 'Syncing...' : 'Submit Exam'} <CheckCircle className="w-4 h-4 ml-1" />
+            {submitting ? 'Syncing...' : 'Submit Exam'} <CheckCircle className="w-3.5 h-3.5" />
           </button>
         </div>
       </header>
 
-      {/* Sub-Header HUD */}
-      <div className="mt-24 px-8 max-w-7xl mx-auto w-full flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+      {/* Sub-Header HUD - Tightened */}
+      <div className="mt-24 px-8 max-w-7xl mx-auto w-full flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
 
-        <div className="space-y-1.5 text-center md:text-left">
+        <div className="space-y-1 text-center md:text-left">
           <div className="flex items-center gap-2 justify-center md:justify-start">
-            <span className="w-2 h-2 bg-primary-500 rounded-full" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Secure Session</span>
+            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Secure Session</span>
           </div>
-          <h2 className="text-4xl font-outfit font-black text-slate-900 leading-tight tracking-tight">{exam?.title}</h2>
+          <h2 className="text-3xl font-outfit font-black text-slate-900 leading-tight tracking-tight">{exam?.title}</h2>
         </div>
 
         <div className="flex items-center gap-10">
-          <div className="bg-white border border-slate-200 rounded-[2rem] px-8 py-4 shadow-sm flex items-center gap-6">
+          <div className="bg-white/60 backdrop-blur-md border border-slate-200 rounded-3xl px-8 py-3 shadow-sm flex items-center gap-6">
             <div className="text-center md:text-right">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Time Remaining</span>
-              <div className={`flex items-center gap-3 font-mono text-3xl font-black ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-slate-900'}`}>
-                 <Clock className={`w-6 h-6 ${timeLeft < 300 ? 'text-red-500' : 'text-primary-500'}`} />
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">Time Remaining</span>
+              <div className={`flex items-center gap-3 font-mono text-2xl font-black ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-slate-900'}`}>
+                 <Clock className={`w-5 h-5 ${timeLeft < 300 ? 'text-red-500' : 'text-blue-500'}`} />
                  {formatTime(timeLeft)}
               </div>
             </div>
@@ -415,13 +415,13 @@ const ExamPortal = () => {
         </AnimatePresence>
       </main>
 
-      {/* Bottom Floating Navigation */}
-      <footer className="fixed bottom-0 left-0 right-0 p-8 z-50 pointer-events-none">
+      {/* Bottom Floating Navigation - Glassy */}
+      <footer className="fixed bottom-0 left-0 right-0 p-6 z-50 pointer-events-none">
         <div className="max-w-7xl mx-auto flex justify-between items-center pointer-events-auto">
           <button 
             disabled={currentIdx === 0}
             onClick={() => setCurrentIdx(prev => prev - 1)}
-            className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-black uppercase tracking-widest text-xs disabled:opacity-30 transition-all p-4"
+            className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-black uppercase tracking-widest text-[10px] bg-white shadow-lg px-6 py-3 rounded-2xl border border-slate-100 disabled:opacity-30 transition-all"
           >
             <ChevronLeft className="w-5 h-5" /> Previous
           </button>
@@ -431,7 +431,7 @@ const ExamPortal = () => {
               if (currentIdx < questions.length - 1) setCurrentIdx(prev => prev + 1);
               else showAlert('All questions attempted. Review your answers or submit.', 'info');
             }}
-            className="btn-premium !py-4 !px-10 shadow-2xl"
+            className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-2xl shadow-blue-600/30"
           >
             Save & Next <ChevronRight className="w-5 h-5" />
           </button>
