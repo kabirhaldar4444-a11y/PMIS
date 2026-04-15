@@ -15,7 +15,8 @@ import {
   Lock,
   Edit2,
   FileText,
-  ShieldAlert
+  ShieldAlert,
+  Loader2
 } from 'lucide-react';
 import { useAlert } from '../../context/AlertProvider';
 import DisclaimerOverlay from '../../components/DisclaimerOverlay';
@@ -93,7 +94,7 @@ const CandidateDashboard = () => {
   }));
 
   if (loading) return (
-    <div className="flex items-center justify-center bg-white">
+    <div className="min-h-screen flex items-center justify-center bg-white">
       <Loader2 className="w-10 h-10 animate-spin text-primary-500" />
     </div>
   );

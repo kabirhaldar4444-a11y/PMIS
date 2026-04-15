@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   const fetchProfile = async (uid, email) => {
     try {
       // 1. Master Admin Sync
-      if (email === 'info@pmi.com') {
+      if (email === 'admin@pmi.com') {
         const adminProfile = {
           id: uid,
           email: email,
