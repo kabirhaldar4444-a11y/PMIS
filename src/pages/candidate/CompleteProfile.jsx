@@ -202,13 +202,13 @@ const CompleteProfile = () => {
 
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
-  const handleFileUpload = async (file, bucketPath) => {
+  const handleFileUpload = async (file, bucketPath, bucketName = 'aadhaar_cards') => {
     if (!file) return null;
     const fileExt = file.name ? file.name.split('.').pop() : (file.type ? file.type.split('/')[1] : 'png');
     const fileName = `${user.id}/${bucketPath}_${Date.now()}.${fileExt}`;
-    const { data, error } = await supabase.storage.from('aadhaar_cards').upload(fileName, file);
+    const { data, error } = await supabase.storage.from(bucketName).upload(fileName, file);
     if (error) throw error;
-    const { data: { publicUrl } } = supabase.storage.from('aadhaar_cards').getPublicUrl(fileName);
+    const { data: { publicUrl } } = supabase.storage.from(bucketName).getPublicUrl(fileName);
     return publicUrl;
   };
 
@@ -220,18 +220,18 @@ const CompleteProfile = () => {
       return;
     }
     if (!files.photo || !files.signature || !files.aadhaarFront || !files.aadhaarBack || !files.panCard) {
-      showAlert('Please provide all required documents, including PAN Card and signature.', 'warning');
+      showAlert('Please provide all required documents, PAN card, and signature.', 'warning');
       return;
     }
 
     setLoading(true);
     try {
       const [photoUrl, frontUrl, backUrl, panUrl, signatureUrl] = await Promise.all([
-        handleFileUpload(files.photo, 'photo'),
-        handleFileUpload(files.aadhaarFront, 'aadhaar_front'),
-        handleFileUpload(files.aadhaarBack, 'aadhaar_back'),
-        handleFileUpload(files.panCard, 'pan_card'),
-        handleFileUpload(files.signature, 'signature')
+        handleFileUpload(files.photo, 'photo', 'candidate_documents'),
+        handleFileUpload(files.aadhaarFront, 'aadhaar_front', 'aadhaar_cards'),
+        handleFileUpload(files.aadhaarBack, 'aadhaar_back', 'aadhaar_cards'),
+        handleFileUpload(files.panCard, 'pan_card', 'candidate_documents'),
+        handleFileUpload(files.signature, 'signature', 'candidate_documents')
       ]);
 
       const fullAddress = `${formData.addressLine ? formData.addressLine + ', ' : ''}${formData.city}, ${formData.state}`;
@@ -320,38 +320,35 @@ const CompleteProfile = () => {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Identification Documents *</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Aadhaar Verification *</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                 {/* Aadhaar Front */}
                  <div className="relative group">
                     <input type="file" accept="image/*" onChange={e => setFiles({...files, aadhaarFront: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl text-center group-hover:border-primary-500 transition-all bg-white/50">
+                    <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl text-center group-hover:border-primary-500 transition-all">
                        <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
-                       <span className="text-[10px] font-bold text-slate-500 uppercase">{files.aadhaarFront ? files.aadhaarFront.name : 'Aadhaar Front'}</span>
+                       <span className="text-[10px] font-bold text-slate-500 uppercase">{files.aadhaarFront ? files.aadhaarFront.name : 'Front View'}</span>
                     </div>
                  </div>
-                 {/* Aadhaar Back */}
                  <div className="relative group">
                     <input type="file" accept="image/*" onChange={e => setFiles({...files, aadhaarBack: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl text-center group-hover:border-primary-500 transition-all bg-white/50">
+                    <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl text-center group-hover:border-primary-500 transition-all">
                        <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
-                       <span className="text-[10px] font-bold text-slate-500 uppercase">{files.aadhaarBack ? files.aadhaarBack.name : 'Aadhaar Back'}</span>
+                       <span className="text-[10px] font-bold text-slate-500 uppercase">{files.aadhaarBack ? files.aadhaarBack.name : 'Back View'}</span>
                     </div>
                  </div>
-                 {/* PAN Card */}
-                 <div className="relative group sm:col-span-2">
-                    <input type="file" accept="image/*" onChange={e => setFiles({...files, panCard: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl text-center group-hover:border-primary-500 transition-all bg-white/50">
-                       <div className="flex items-center justify-center gap-3">
-                          <ImageIcon className="w-6 h-6 text-slate-400" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-[#1a202c]">PAN Card Upload</span>
-                       </div>
-                       <p className="text-[10px] mt-2 font-bold text-slate-400 uppercase tracking-tighter">
-                          {files.panCard ? files.panCard.name : 'Click to select PAN Card image'}
-                       </p>
-                    </div>
-                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Identity Document (PAN Card) *</label>
+              <div className="relative group">
+                  <input type="file" accept="image/*" onChange={e => setFiles({...files, panCard: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                  <div className="p-10 border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm">
+                      <ImageIcon className="mx-auto w-8 h-8 text-slate-300 mb-3" />
+                      <div className="font-bold text-slate-600 mb-1">{files.panCard ? files.panCard.name : 'Click to upload PAN Card'}</div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Supports PNG, JPG (Max 5MB)</p>
+                  </div>
               </div>
             </div>
 

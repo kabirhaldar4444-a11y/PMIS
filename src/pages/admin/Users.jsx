@@ -98,8 +98,6 @@ const Users = () => {
 
   const handleUpdateProfile = async (updatedData) => {
     try {
-      const { password, ...profileFields } = updatedData;
-      
       // ROBUST CLEANUP: Explicitly only send columns that exist in the profiles table
       const allowedProfileColumns = [
         'full_name', 'phone', 'address', 'state', 'city', 
@@ -824,7 +822,6 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                   <VerificationCard label="PROFILE PHOTO" url={user.live_photo_url || user.profile_photo_url} onView={() => setGlobalViewingDoc({ label: "PROFILE PHOTO", url: user.live_photo_url || user.profile_photo_url })} />
                   <VerificationCard label="AADHAAR FRONT" url={user.aadhaar_front_url} onView={() => setGlobalViewingDoc({ label: "AADHAAR FRONT", url: user.aadhaar_front_url })} />
                   <VerificationCard label="AADHAAR BACK" url={user.aadhaar_back_url} onView={() => setGlobalViewingDoc({ label: "AADHAAR BACK", url: user.aadhaar_back_url })} />
-                  <VerificationCard label="PAN CARD" url={user.pan_card_url} onView={() => setGlobalViewingDoc({ label: "PAN CARD", url: user.pan_card_url })} />
                 </div>
               </div>
 
@@ -1100,7 +1097,6 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
                <div className="grid sm:grid-cols-2 gap-4">
                   <DocumentWidget label="Aadhar Card (Front)" url={user.aadhaar_front_url} onView={() => onViewDoc({ label: "Aadhar Card (Front)", url: user.aadhaar_front_url })} />
                   <DocumentWidget label="Aadhar Card (Back)" url={user.aadhaar_back_url} onView={() => onViewDoc({ label: "Aadhar Card (Back)", url: user.aadhaar_back_url })} />
-                  <DocumentWidget label="PAN Card" url={user.pan_card_url} onView={() => onViewDoc({ label: "PAN Card", url: user.pan_card_url })} />
                </div>
              </div>
 
