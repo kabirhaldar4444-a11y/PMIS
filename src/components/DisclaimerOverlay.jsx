@@ -53,65 +53,156 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
         <motion.div 
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          className="bg-white/90 backdrop-blur-3xl border border-white/50 w-full max-w-2xl rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          className="bg-white/95 backdrop-blur-3xl border border-white/50 w-full max-w-[960px] rounded-[3rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
         >
-          <div className="p-10 border-b border-slate-100/50 flex items-center gap-4 bg-gradient-to-r from-primary-500/5 to-transparent">
-            <div className="w-12 h-12 bg-primary-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary-500/20">
-              <ShieldCheck className="w-7 h-7" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-black text-slate-900 leading-tight">Privacy & Disclaimer</h3>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Please review our terms of service</p>
+          <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-primary-50/50 to-transparent">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-primary-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-primary-600/20">
+                <ShieldCheck className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-3xl font-bold text-slate-900 tracking-tight">PMIS Policies</h3>
+                <p className="text-sm font-semibold text-slate-400 uppercase tracking-[0.2em] mt-1">Review our service delivery and privacy standards</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar">
-            <div className="bg-slate-50/50 p-8 rounded-3xl border border-slate-100">
-              <p className="text-slate-600 leading-relaxed text-[15px] font-medium whitespace-pre-wrap">
-1. Service Delivery / Platform
-• One attempt allowed for Pre-Board and Final exams
-• Soft copy certificate issued within 15 days after final exam
-• No physical certificate (only digital)
+          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+            <div className="max-w-[850px] mx-auto space-y-12">
+              
+              {/* 1. Service Delivery / Platform */}
+              <section className="space-y-6">
+                <h4 className="text-[26px] font-bold text-slate-900 border-l-4 border-primary-500 pl-5">1. Service Delivery / Platform</h4>
+                <div className="bg-slate-50/50 rounded-[2rem] p-8 border border-slate-100/80">
+                  <ul className="space-y-4">
+                    <li className="flex items-start gap-4 text-[16px] leading-[1.7] text-slate-600">
+                      <div className="w-2 h-2 rounded-full bg-primary-500 mt-[9px] shrink-0 shadow-sm shadow-primary-500/20" />
+                      <span>One attempt allowed for Pre-Board and Final exams</span>
+                    </li>
+                    <li className="flex items-start gap-4 text-[16px] leading-[1.7] text-slate-600">
+                      <div className="w-2 h-2 rounded-full bg-primary-500 mt-[9px] shrink-0 shadow-sm shadow-primary-500/20" />
+                      <span>Soft copy certificate issued within 15 days after final exam</span>
+                    </li>
+                    <li className="flex items-start gap-4 text-[16px] leading-[1.7] text-slate-600">
+                      <div className="w-2 h-2 rounded-full bg-primary-500 mt-[9px] shrink-0 shadow-sm shadow-primary-500/20" />
+                      <span>No physical certificate (only digital)</span>
+                    </li>
+                  </ul>
 
-Pre-Exam Reward System:
-• 80%+ score = eligible for rewards
-• 5+ gift options (₹50K–₹1L range)
-• Delivery in 45–60 days
-• Tracking shared via email
-• OTP required for delivery
-• Company may use student photos for promotion
+                  <div className="mt-10 pt-8 border-t border-slate-200/60">
+                    <h5 className="text-[20px] font-semibold text-slate-800 mb-6 px-1">Pre-Exam Reward System:</h5>
+                    <ul className="space-y-4">
+                      {[
+                        '80%+ score = eligible for rewards',
+                        '5+ gift options (₹50K–₹1L range)',
+                        'Delivery in 45–60 days',
+                        'Tracking shared via email',
+                        'OTP required for delivery',
+                        'Company may use student photos for promotion'
+                      ].map((item, i) => (
+                        <li key={i} className="flex items-start gap-4 text-[16px] leading-[1.7] text-slate-600">
+                          <span className="text-primary-500 font-bold mt-[-2px]">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </section>
 
-2. Privacy Policy
-• Data used for enrollment, payments, exams, communication, and improvement
-• Data is NOT sold or shared commercially
-• Stored securely with encryption and limited access
-• Payment data handled securely
-• Cookies used for login and analytics
-• Data retained only as needed
-• Users can access, correct, or delete their data
-• Policy updates may occur anytime
+              {/* 2. Privacy Policy */}
+              <section className="space-y-6">
+                <h4 className="text-[26px] font-bold text-slate-900 border-l-4 border-primary-500 pl-5">2. Privacy Policy</h4>
+                <div className="bg-slate-50/50 rounded-[2rem] p-8 border border-slate-100/80">
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                    {[
+                      'Data used for enrollment, payments, exams, communication, and improvement',
+                      'Data is NOT sold or shared commercially',
+                      'Stored securely with encryption and limited access',
+                      'Payment data handled securely',
+                      'Cookies used for login and analytics',
+                      'Data retained only as needed',
+                      'Users can access, correct, or delete their data',
+                      'Policy updates may occur anytime'
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-4 text-[15px] leading-[1.6] text-slate-600">
+                        <div className="w-2 h-2 rounded-full bg-primary-500 mt-[8px] shrink-0 shadow-sm shadow-primary-500/20" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
 
-3. Terms & Conditions
-• One attempt allowed for exams
-• Certificate issued after final exam
-• Refund rules apply (see below)
-• Reward system based on performance (80%+)
+              {/* 3. Terms & Conditions */}
+              <section className="space-y-6">
+                <h4 className="text-[26px] font-bold text-slate-900 border-l-4 border-primary-500 pl-5">3. Terms & Conditions</h4>
+                <div className="bg-slate-50/50 rounded-[2rem] p-8 border border-slate-100/80">
+                  <ul className="space-y-4">
+                    {[
+                      'One attempt allowed for exams',
+                      'Certificate issued after final exam',
+                      'Refund rules apply (see below)',
+                      'Reward system based on performance (80%+)'
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-4 text-[16px] leading-[1.7] text-slate-600">
+                        <div className="w-2 h-2 rounded-full bg-primary-500 mt-[9px] shrink-0 shadow-sm shadow-primary-500/20" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
 
-4. Refund Policy
-• No refund after exam attempt or content access
-• Refund allowed only within 24 hours of payment
-• 90% refund (10% deduction mandatory)
-• Processing time: 5–7 working days (+7 days bank time)
-• Request must include name, email, course, receipt, and reason
-• No 100% refund under any condition
+              {/* 4. Refund Policy */}
+              <section className="space-y-6">
+                <h4 className="text-[26px] font-bold text-slate-900 border-l-4 border-primary-500 pl-5">4. Refund Policy</h4>
+                <div className="bg-slate-50/50 rounded-[2rem] p-8 border border-slate-100/80">
+                  <ul className="space-y-4">
+                    {[
+                      'No refund after exam attempt or content access',
+                      'Refund allowed only within 24 hours of payment',
+                      '90% refund (10% deduction mandatory)',
+                      'Processing time: 5–7 working days (+7 days bank time)',
+                      'Request must include name, email, course, receipt, and reason',
+                      'No 100% refund under any condition'
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-4 text-[16px] leading-[1.7] text-slate-600">
+                        <div className="w-2 h-2 rounded-full bg-primary-500 mt-[9px] shrink-0 shadow-sm shadow-primary-500/20" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
 
-Final Key Points
-• Strict no-refund after usage
-• Short refund window (24 hours)
-• Digital-only system
-• Performance-based rewards
-• Strong data protection policies
-              </p>
+              {/* Final Key Points */}
+              <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 blur-[100px] rounded-full -mr-32 -mt-32" />
+                <div className="relative z-10">
+                  <h4 className="text-[24px] font-bold mb-8 flex items-center gap-3">
+                    <CheckCircle className="w-7 h-7 text-primary-400" />
+                    Final Key Points
+                  </h4>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[
+                      'Strict no-refund after usage',
+                      'Short refund window (24 hours)',
+                      'Digital-only system',
+                      'Performance-based rewards',
+                      'Strong data protection policies'
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-4 text-[16px] font-medium text-slate-300 leading-relaxed">
+                        <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary-400" />
+                        </div>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
             </div>
           </div>
 

@@ -7,7 +7,7 @@ const PMISLogo = ({ variant = 'default', className = '' }) => {
   const configs = {
     login: {
       wrapper: "flex flex-col items-center mb-0",
-      img: "w-full max-w-[280px] sm:max-w-[340px] md:max-w-[380px] xl:max-w-[420px]"
+      img: "w-full max-w-[220px] sm:max-w-[280px] md:max-w-[320px] xl:max-w-[360px]"
     },
 
     navbar: {

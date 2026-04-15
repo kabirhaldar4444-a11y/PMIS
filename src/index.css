@@ -70,15 +70,51 @@
 
   /* Blob Decorative Element */
   .blob {
-    @apply absolute blur-[100px] opacity-40 pointer-events-none -z-10 rounded-full;
-    animation: blob-float 20s infinite alternate ease-in-out;
+    @apply absolute blur-[60px] md:blur-[100px] pointer-events-none transition-all duration-1000;
+    animation: blob-float 15s infinite alternate ease-in-out, blob-morph 20s infinite alternate ease-in-out;
   }
+
+  .bubble {
+    @apply absolute pointer-events-none rounded-full flex items-center justify-center text-center transition-all duration-1000;
+  }
+
+  .bubble-glow {
+    @apply absolute inset-0 rounded-full blur-[8px] md:blur-[12px] -z-10;
+    background: inherit;
+  }
+
+  .bubble-content {
+    @apply relative z-10 flex items-center justify-center w-full h-full p-2;
+  }
+
+  .bubble-text {
+    @apply text-white font-black text-[9px] md:text-[11px] leading-tight uppercase tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)];
+  }
+}
+
+@keyframes bubble-drift-right {
+  0% { transform: translateX(-20vw) translateY(0) scale(1); }
+  50% { transform: translateX(50vw) translateY(-40px) scale(1.2); }
+  100% { transform: translateX(120vw) translateY(0) scale(1); }
+}
+
+@keyframes bubble-drift-left {
+  0% { transform: translateX(120vw) translateY(0) scale(1); }
+  50% { transform: translateX(50vw) translateY(40px) scale(0.8); }
+  100% { transform: translateX(-20vw) translateY(0) scale(1); }
+}
+
+@keyframes blob-morph {
+  0% { border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
+  34% { border-radius: 70% 30% 46% 54% / 30% 29% 71% 70%; }
+  67% { border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }
+  100% { border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
 }
 
 @keyframes blob-float {
   0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  33% { transform: translate(100px, -50px) scale(1.1) rotate(120deg); }
-  66% { transform: translate(-50px, 100px) scale(0.9) rotate(240deg); }
+  33% { transform: translate(150px, -100px) scale(1.2) rotate(120deg); }
+  66% { transform: translate(-100px, 150px) scale(0.8) rotate(240deg); }
   100% { transform: translate(0, 0) scale(1) rotate(360deg); }
 }
 
