@@ -100,19 +100,30 @@ const Users = () => {
     try {
       const { password, ...profileFields } = updatedData;
       
-      // EXPLICIT CLEANUP: Remove non-profile fields from the DB update payload
-      delete profileFields.password;
-      delete profileFields.submissionChanges;
+      // ROBUST CLEANUP: Explicitly only send columns that exist in the profiles table
+      const allowedProfileColumns = [
+        'full_name', 'phone', 'address', 'state', 'city', 
+        'role', 'profile_completed', 'disclaimer_accepted', 
+        'allotted_exam_ids', 'is_exam_locked', 'can_register',
+        'profile_photo_url', 'live_photo_url', 'aadhaar_front_url', 
+        'aadhaar_back_url', 'pan_card_url', 'signature_url'
+      ];
+      
+      const cleanProfileData = {};
+      allowedProfileColumns.forEach(col => {
+        if (profileFields[col] !== undefined) {
+          cleanProfileData[col] = profileFields[col];
+        }
+      });
 
-      // FIX: Ensure allotted_exam_ids is a clean JS array (fixes "expected JSON array" bug)
-      const sanitizedFields = { ...profileFields };
-      if (sanitizedFields.allotted_exam_ids && !Array.isArray(sanitizedFields.allotted_exam_ids)) {
-        sanitizedFields.allotted_exam_ids = [];
+      // Ensure allotted_exam_ids is a valid array (Supabase UUID[] requirements)
+      if (cleanProfileData.allotted_exam_ids && !Array.isArray(cleanProfileData.allotted_exam_ids)) {
+        cleanProfileData.allotted_exam_ids = [];
       }
 
       const { data, error, status } = await supabase
         .from('profiles')
-        .update(sanitizedFields)
+        .update(cleanProfileData)
         .eq('id', editingUser.id)
         .select();
 
@@ -122,9 +133,14 @@ const Users = () => {
       if (updatedData.submissionChanges && Object.keys(updatedData.submissionChanges).length > 0) {
         const changes = updatedData.submissionChanges;
         for (const subId in changes) {
+          // Only send specific allowed columns for submissions
+          const subUpdate = {};
+          if (changes[subId].admin_score_override !== undefined) subUpdate.admin_score_override = changes[subId].admin_score_override;
+          if (changes[subId].is_released !== undefined) subUpdate.is_released = changes[subId].is_released;
+
           const { error: subError } = await supabase
             .from('submissions')
-            .update(changes[subId])
+            .update(subUpdate)
             .eq('id', subId);
           
           if (subError) {
