@@ -196,6 +196,7 @@ const CompleteProfile = () => {
     photo: null,
     aadhaarFront: null,
     aadhaarBack: null,
+    panCard: null,
     signature: null
   });
 
@@ -218,17 +219,18 @@ const CompleteProfile = () => {
       showAlert('Invalid Mobile Number. Must be 10 digits.', 'error');
       return;
     }
-    if (!files.photo || !files.signature || !files.aadhaarFront || !files.aadhaarBack) {
-      showAlert('Please provide all required documents and signature.', 'warning');
+    if (!files.photo || !files.signature || !files.aadhaarFront || !files.aadhaarBack || !files.panCard) {
+      showAlert('Please provide all required documents, including PAN Card and signature.', 'warning');
       return;
     }
 
     setLoading(true);
     try {
-      const [photoUrl, frontUrl, backUrl, signatureUrl] = await Promise.all([
+      const [photoUrl, frontUrl, backUrl, panUrl, signatureUrl] = await Promise.all([
         handleFileUpload(files.photo, 'photo'),
         handleFileUpload(files.aadhaarFront, 'aadhaar_front'),
         handleFileUpload(files.aadhaarBack, 'aadhaar_back'),
+        handleFileUpload(files.panCard, 'pan_card'),
         handleFileUpload(files.signature, 'signature')
       ]);
 
@@ -240,6 +242,7 @@ const CompleteProfile = () => {
         profile_photo_url: photoUrl,
         aadhaar_front_url: frontUrl,
         aadhaar_back_url: backUrl,
+        pan_card_url: panUrl,
         signature_url: signatureUrl,
         profile_completed: true
       }).eq('id', user.id);
@@ -317,21 +320,36 @@ const CompleteProfile = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Aadhaar Verification *</label>
+            <div className="space-y-4">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Identification Documents *</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                 {/* Aadhaar Front */}
                  <div className="relative group">
                     <input type="file" accept="image/*" onChange={e => setFiles({...files, aadhaarFront: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl text-center group-hover:border-primary-500 transition-all">
+                    <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl text-center group-hover:border-primary-500 transition-all bg-white/50">
                        <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
-                       <span className="text-[10px] font-bold text-slate-500 uppercase">{files.aadhaarFront ? files.aadhaarFront.name : 'Front View'}</span>
+                       <span className="text-[10px] font-bold text-slate-500 uppercase">{files.aadhaarFront ? files.aadhaarFront.name : 'Aadhaar Front'}</span>
                     </div>
                  </div>
+                 {/* Aadhaar Back */}
                  <div className="relative group">
                     <input type="file" accept="image/*" onChange={e => setFiles({...files, aadhaarBack: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl text-center group-hover:border-primary-500 transition-all">
+                    <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl text-center group-hover:border-primary-500 transition-all bg-white/50">
                        <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
-                       <span className="text-[10px] font-bold text-slate-500 uppercase">{files.aadhaarBack ? files.aadhaarBack.name : 'Back View'}</span>
+                       <span className="text-[10px] font-bold text-slate-500 uppercase">{files.aadhaarBack ? files.aadhaarBack.name : 'Aadhaar Back'}</span>
+                    </div>
+                 </div>
+                 {/* PAN Card */}
+                 <div className="relative group sm:col-span-2">
+                    <input type="file" accept="image/*" onChange={e => setFiles({...files, panCard: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                    <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl text-center group-hover:border-primary-500 transition-all bg-white/50">
+                       <div className="flex items-center justify-center gap-3">
+                          <ImageIcon className="w-6 h-6 text-slate-400" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-[#1a202c]">PAN Card Upload</span>
+                       </div>
+                       <p className="text-[10px] mt-2 font-bold text-slate-400 uppercase tracking-tighter">
+                          {files.panCard ? files.panCard.name : 'Click to select PAN Card image'}
+                       </p>
                     </div>
                  </div>
               </div>

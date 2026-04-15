@@ -37,10 +37,6 @@ function App() {
   return (
     <Router>
       <div className="font-inter selection:bg-primary-500/30 relative">
-
-        <div className="blob w-80 h-80 bg-primary-500 top-[10%] -left-20 opacity-20" />
-        <div className="blob w-[500px] h-[500px] bg-secondary-500 bottom-[10%] -right-40 opacity-20" />
-        
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
