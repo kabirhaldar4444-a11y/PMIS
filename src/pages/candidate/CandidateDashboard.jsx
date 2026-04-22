@@ -106,166 +106,196 @@ const CandidateDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen pb-20 bg-slate-50/50">
-      <DisclaimerOverlay user={user} profile={profile} />
-
-      {/* Premium Navbar Match to Screenshot */}
-      <nav className="fixed top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-[100]">
-        <div className="bg-white/80 backdrop-blur-2xl rounded-full px-8 py-3.5 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white">
-          <div className="flex items-center">
-            <PMISLogo variant="navbar" />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button className="bg-blue-600/10 text-blue-600 px-6 py-2 rounded-full text-xs font-black uppercase tracking-tight transition-all">My Exams</button>
-            <button onClick={() => navigate('/profile')} className="text-slate-500 hover:bg-slate-50 px-6 py-2 rounded-full text-xs font-black uppercase transition-all">Profile</button>
-            <div className="h-6 w-px bg-slate-200 mx-2 hidden sm:block"></div>
-            <button onClick={handleLogout} className="bg-blue-600 text-white px-8 py-2.5 rounded-full text-sm font-black tracking-tight shadow-xl shadow-blue-600/20 hover:scale-[1.03] transition-all active:scale-95">Logout</button>
-          </div>
+    <div className="min-h-screen pb-20 bg-slate-50 relative overflow-hidden font-inter selection:bg-primary-500/30">
+      {/* Dynamic Ethereal Background - Reused from Login/index.css */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="bubble w-[30rem] h-[30rem] top-[-10%] left-[-10%]" style={{ animation: 'bubble-drift-right 60s infinite linear' }}>
+          <div className="bubble-glow bg-blue-400/10" />
         </div>
-      </nav>
+        <div className="bubble w-[25rem] h-[25rem] bottom-[-10%] right-[-10%]" style={{ animation: 'bubble-drift-left 50s infinite linear' }}>
+          <div className="bubble-glow bg-indigo-400/10" />
+        </div>
+        <div className="bubble w-[20rem] h-[20rem] top-[20%] right-[10%]" style={{ animation: 'bubble-drift-left 55s infinite linear', animationDelay: '-12s' }}>
+          <div className="bubble-glow bg-emerald-400/5" />
+        </div>
+      </div>
 
-      <main className="pt-40 px-6 max-w-5xl mx-auto space-y-12">
-        {/* Header Section Match to Screenshot */}
-        <header className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8 relative">
-          <div className="space-y-1">
-            <h1 className="text-6xl font-outfit font-black text-[#1e293b] tracking-tight">My Assessments</h1>
-            <p className="text-slate-500 font-medium text-lg">
-              Welcome back, <span className="text-blue-600 font-bold">{profile?.full_name?.split(' ')[0] || 'Candidate'}</span>
-            </p>
+      <div className="relative z-10">
+        <DisclaimerOverlay user={user} profile={profile} />
+
+        {/* Premium Floating Glass Navbar */}
+        <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl z-[100] transition-all duration-300">
+          <div className="bg-white/70 backdrop-blur-2xl rounded-[2rem] px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.04)] border border-white/60">
+            <div className="flex items-center pl-2">
+              <PMISLogo variant="navbar" />
+            </div>
+
+            <div className="flex items-center gap-1 sm:gap-3">
+              <button className="bg-primary-500/10 text-primary-600 px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all shadow-sm">My Exams</button>
+              <button onClick={() => navigate('/profile')} className="text-slate-500 hover:bg-slate-100 hover:text-slate-800 px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all">Profile</button>
+              <div className="h-6 w-px bg-slate-200/60 mx-1 sm:mx-2 hidden sm:block"></div>
+              <button onClick={handleLogout} className="bg-slate-900 text-white px-5 sm:px-8 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-black tracking-widest uppercase shadow-xl shadow-slate-900/20 hover:bg-black hover:-translate-y-0.5 transition-all active:scale-95 group flex items-center gap-2">
+                Logout <LogOut className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+              </button>
+            </div>
           </div>
+        </nav>
 
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full md:w-auto">
-             <div className="flex items-center gap-3 bg-white/60 backdrop-blur-md border border-slate-200 px-6 py-3 rounded-full shadow-sm">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Status</span>
+        <main className="pt-40 px-6 max-w-6xl mx-auto space-y-16">
+          {/* Hero Header Section */}
+          <header className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8 relative">
+            <div className="space-y-3 z-10">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 bg-white/60 backdrop-blur-md border border-white/80 px-4 py-2 rounded-full shadow-sm w-fit">
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                  <span className="text-xs font-black text-emerald-600 uppercase tracking-tight">Verified Profile</span>
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Verified Profile</span>
                 </div>
-             </div>
-             
-             <div className="relative w-full md:w-80">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+              </motion.div>
+              <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-5xl md:text-7xl font-outfit font-black text-slate-900 tracking-tight leading-[1.1]">
+                My <br className="hidden md:block"/> Assessments
+              </motion.h1>
+              <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-slate-500 font-medium text-lg flex items-center gap-2">
+                Welcome back, <span className="text-primary-600 font-bold bg-primary-50 px-3 py-1 rounded-lg border border-primary-100/50">{profile?.full_name?.split(' ')[0] || 'Candidate'}</span>
+              </motion.p>
+            </div>
+
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }} className="relative w-full md:w-[340px] z-10 group">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-indigo-400 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
+              <div className="relative bg-white/80 backdrop-blur-xl border border-white rounded-2xl shadow-lg p-2 flex items-center">
+                <div className="pl-4 pr-3 text-slate-400 group-focus-within:text-primary-500 transition-colors">
+                  <Search className="w-5 h-5" />
+                </div>
                 <input 
                   type="text" 
                   placeholder="Search exams by name..." 
                   value={searchTerm} 
                   onChange={e => setSearchTerm(e.target.value)} 
-                  className="w-full bg-white border border-slate-200 rounded-full py-4 pl-14 pr-6 text-sm font-medium shadow-sm focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600/20 transition-all outline-none" 
+                  className="w-full bg-transparent py-3 pr-4 text-sm font-semibold text-slate-800 placeholder:text-slate-400 placeholder:font-medium focus:outline-none" 
                 />
-             </div>
-          </div>
-        </header>
-
-        {/* Exams Section Match to Screenshot */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-3 ml-2">
-             <div className="w-10 h-10 bg-blue-600/5 rounded-xl flex items-center justify-center text-blue-600"><BookOpen className="w-5 h-5" /></div>
-             <h2 className="text-2xl font-outfit font-black text-slate-900 tracking-tight">Available Exams</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {allottedExams.length > 0 ? allottedExams.map(exam => (
-               <motion.div 
-                 key={exam.id} 
-                 initial={{ opacity: 0, y: 20 }} 
-                 animate={{ opacity: 1, y: 0 }} 
-                 className="bg-white p-10 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_50px_rgba(59,130,246,0.1)] transition-all duration-500 border border-slate-100 group relative overflow-hidden flex flex-col justify-between"
-               >
-                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/10 transition-colors" />
-                 
-                 <div>
-                   <div className="flex justify-between items-start mb-10">
-                     <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-600/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-                        <Edit2 className="w-7 h-7" />
-                     </div>
-                   </div>
-                   <h3 className="text-3xl font-outfit font-black text-slate-900 mb-8 leading-tight tracking-tight group-hover:text-blue-600 transition-colors uppercase">{exam.title}</h3>
-                   
-                   <div className="bg-slate-50/80 rounded-2xl p-5 flex items-center gap-4 mb-10 border border-slate-100 group-hover:bg-blue-50 transition-colors">
-                      <Clock className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                      <span className="text-sm font-black text-slate-600 uppercase tracking-tight group-hover:text-blue-700">{exam.duration} Minutes Duration</span>
-                   </div>
-                 </div>
-
-                 <button 
-                   onClick={() => navigate(`/exam/${exam.id}`)}
-                   className="w-full py-5 bg-blue-600 text-white rounded-[1.5rem] font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-2xl shadow-blue-600/30 active:scale-[0.98]"
-                 >
-                   Start Exam <ArrowRight className="w-6 h-6" />
-                 </button>
-               </motion.div>
-            )) : (
-              <div className="col-span-full py-32 bg-white/40 border-2 border-dashed border-slate-200 rounded-[3.5rem] text-center shadow-inner">
-                 <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl border border-slate-100">
-                    <FileText className="w-10 h-10 text-slate-200" />
-                 </div>
-                 <h3 className="text-2xl font-black text-slate-800 mb-2">No pending exams assigned to you.</h3>
-                 <p className="text-slate-400 font-bold text-sm uppercase tracking-[0.2em]">Check back later or contact your instructor.</p>
               </div>
-            )}
-          </div>
-        </section>
+            </motion.div>
+          </header>
 
-        {/* History Section Match to Screenshot */}
-        {archivedSubmissions.length > 0 && (
-          <section className="space-y-6 pt-10">
-            <div className="flex items-center gap-3 ml-2">
-               <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg"><History className="w-5 h-5" /></div>
-               <h2 className="text-2xl font-outfit font-black text-slate-900 uppercase tracking-tight">Assessment History</h2>
+          {/* Available Exams Section */}
+          <section className="space-y-8 z-10 relative">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary-500/30">
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <h2 className="text-3xl font-outfit font-black text-slate-900 tracking-tight">Available Exams</h2>
             </div>
             
-            <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-sm">
-               <table className="w-full text-left">
-                 <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="px-10 py-6 text-[11px] font-black uppercase text-slate-400 tracking-[0.15em]">Examination</th>
-                      <th className="px-10 py-6 text-[11px] font-black uppercase text-slate-400 tracking-[0.15em]">Date Completed</th>
-                      <th className="px-10 py-6 text-[11px] font-black uppercase text-slate-400 tracking-[0.15em]">Action Status</th>
-                    </tr>
-                 </thead>
-                 <tbody className="divide-y divide-slate-100">
-                    {archivedSubmissions.map(sub => (
-                      <tr key={sub.id} className="hover:bg-slate-50/30 transition-colors group">
-                        <td className="px-10 py-8">
-                           <div className="font-black text-slate-800 text-lg uppercase group-hover:text-blue-600 transition-colors">{sub.exam?.title || 'Unknown Exam'}</div>
-                           {sub.is_released && (
-                             <div className="mt-1 flex items-center gap-2">
-                               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                               <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Score Verified</span>
-                             </div>
-                           )}
-                        </td>
-                        <td className="px-10 py-8 text-sm font-bold text-slate-500">{new Date(sub.submitted_at).toLocaleDateString('en-GB')}</td>
-                        <td className="px-10 py-8">
-                           <div className="flex items-center gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {allottedExams.length > 0 ? allottedExams.map((exam, index) => (
+                <motion.div 
+                  key={exam.id} 
+                  initial={{ opacity: 0, y: 20 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  transition={{ delay: 0.1 * index }}
+                  className="glass-card-saas p-8 flex flex-col justify-between group h-full bg-white/60 hover:bg-white"
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-8">
+                      <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-primary-600 shadow-md border border-slate-100 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                        <Edit2 className="w-6 h-6" />
+                      </div>
+                      <div className="bg-primary-50 border border-primary-100 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-primary-500" />
+                        <span className="text-[10px] font-black text-primary-600 uppercase tracking-widest">{exam.duration} Min</span>
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-outfit font-black text-slate-900 mb-4 leading-tight tracking-tight group-hover:text-primary-600 transition-colors uppercase line-clamp-2">{exam.title}</h3>
+                    <p className="text-slate-500 text-sm font-medium mb-8 line-clamp-2">{exam.description || 'Standard examination module. Ensure stable connection before starting.'}</p>
+                  </div>
+
+                  <button 
+                    onClick={() => navigate(`/exam/${exam.id}`)}
+                    className="w-full btn-premium !py-4 !rounded-xl !text-sm tracking-[0.2em] uppercase"
+                  >
+                    Start Exam <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </motion.div>
+              )) : (
+                <div className="col-span-full py-24 bg-white/40 backdrop-blur-sm border-2 border-dashed border-slate-200/60 rounded-[3rem] text-center shadow-inner">
+                  <div className="w-24 h-24 bg-white rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl border border-slate-100">
+                    <ShieldAlert className="w-10 h-10 text-slate-300" />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-800 mb-2 font-outfit">No pending exams</h3>
+                  <p className="text-slate-500 font-semibold text-sm uppercase tracking-[0.1em]">Check back later or contact your instructor.</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Assessment History Section */}
+          {archivedSubmissions.length > 0 && (
+            <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="space-y-8 pt-8 z-10 relative">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20">
+                  <History className="w-6 h-6" />
+                </div>
+                <h2 className="text-3xl font-outfit font-black text-slate-900 tracking-tight">Assessment History</h2>
+              </div>
+              
+              <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-100">
+                        <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Examination</th>
+                        <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Date Completed</th>
+                        <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Action Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100/80">
+                      {archivedSubmissions.map(sub => (
+                        <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-8 py-6">
+                            <div className="font-black text-slate-800 text-base uppercase group-hover:text-primary-600 transition-colors tracking-tight">{sub.exam?.title || 'Unknown Exam'}</div>
+                            {sub.is_released && (
+                              <div className="mt-2 flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Score Verified</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="inline-flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              <span className="text-xs font-bold text-slate-600">{new Date(sub.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-4">
                               {sub.is_released ? (
-                                <div className="flex items-center gap-6">
-                                  <div className="flex flex-col">
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Final Result</span>
-                                    <span className="text-2xl font-outfit font-black text-slate-900 leading-none">
-                                      {sub.admin_score_override ?? sub.score} <span className="text-slate-300 font-normal">/</span> {sub.total_questions}
+                                <div className="flex flex-wrap items-center gap-4">
+                                  <div className="bg-slate-900 text-white px-4 py-2 rounded-xl flex items-center gap-3 shadow-lg shadow-slate-900/10">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</span>
+                                    <span className="text-xl font-outfit font-black leading-none">
+                                      {sub.admin_score_override ?? sub.score} <span className="text-slate-500 font-medium text-sm mx-0.5">/</span> <span className="text-sm">{sub.total_questions}</span>
                                     </span>
                                   </div>
-                                  <div className="bg-blue-50/50 text-blue-600 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border border-blue-100 flex items-center gap-1.5 shadow-sm">
-                                    <CheckCircle className="w-3 h-3" /> Result Verified
+                                  <div className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-1.5 shadow-sm">
+                                    <CheckCircle className="w-3 h-3" /> Released
                                   </div>
                                 </div>
                               ) : (
-                                <span className="inline-flex items-center gap-2.5 bg-slate-50 text-slate-400 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-100">
+                                <span className="inline-flex items-center gap-2 bg-amber-50 text-amber-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-amber-100">
                                   <Loader2 className="w-3.5 h-3.5 animate-spin" /> Awaiting Review
                                 </span>
                               )}
-                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                 </tbody>
-               </table>
-            </div>
-          </section>
-        )}
-      </main>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.section>
+          )}
+        </main>
+      </div>
     </div>
   );
 };
