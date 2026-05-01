@@ -324,11 +324,15 @@ const Users = () => {
         onSave={handleUpdateProfile} 
       />
 
-      <ViewCandidateDrawer 
-        user={viewingUser} 
-        onClose={() => setViewingUser(null)} 
-        onViewDoc={setGlobalViewingDoc}
-      />
+      <AnimatePresence>
+        {viewingUser && (
+          <ViewCandidateDrawer 
+            user={viewingUser} 
+            onClose={() => setViewingUser(null)} 
+            onViewDoc={setGlobalViewingDoc}
+          />
+        )}
+      </AnimatePresence>
 
       <DeleteConfirmModal 
         user={userToDelete} 
@@ -1053,138 +1057,127 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-        <motion.div 
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-          onClick={onClose}
-        />
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="bg-slate-50 w-full max-w-3xl max-h-[90vh] shadow-2xl relative z-10 flex flex-col overflow-hidden rounded-[2rem] border border-white"
-        >
-          {/* Drawer Header Styled accurately to the screenshot */}
-          <div className="p-6 md:p-8 bg-white border-b border-slate-100 flex items-center justify-between shadow-sm z-20">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 overflow-hidden flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                {user.profile_photo_url ? <img src={user.profile_photo_url} className="w-full h-full object-cover" /> : user.full_name?.charAt(0) || '?'}
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-800 leading-none mb-1">{user.full_name || 'Incomplete Profile'}</h2>
-                <div className="flex items-center gap-2 text-sm text-blue-500 font-medium">
-                  {user.email}
+      {user && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="bg-slate-50 w-full max-w-4xl max-h-[90vh] shadow-2xl relative z-10 flex flex-col overflow-hidden rounded-[2rem] border border-white"
+          >
+            {/* Drawer Header */}
+            <div className="p-6 md:p-8 bg-white border-b border-slate-100 flex items-center justify-between shadow-sm z-20">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 overflow-hidden flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                  {user.profile_photo_url ? <img src={user.profile_photo_url} className="w-full h-full object-cover" /> : user.full_name?.charAt(0) || '?'}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800 leading-none mb-1">{user.full_name || 'Incomplete Profile'}</h2>
+                  <div className="flex items-center gap-2 text-sm text-blue-500 font-medium">
+                    {user.email}
+                  </div>
                 </div>
               </div>
+              <button onClick={onClose} className="p-3 bg-slate-50 text-slate-400 hover:text-slate-800 rounded-2xl transition-colors border border-slate-100 hover:border-slate-200">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <button onClick={onClose} className="p-3 bg-slate-50 text-slate-400 hover:text-slate-800 rounded-2xl transition-colors border border-slate-100 hover:border-slate-200">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
 
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 custom-scrollbar">
-             
-             {/* Personal Details Card */}
-             <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full text-xs font-bold tracking-wider uppercase text-slate-600 mb-6 border border-slate-200">
-                   <User className="w-3.5 h-3.5" /> PERSONAL DETAILS
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 custom-scrollbar">
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Personal Details Card */}
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full text-xs font-bold tracking-wider uppercase text-slate-600 mb-6 border border-slate-200">
+                      <User className="w-3.5 h-3.5" /> PERSONAL DETAILS
+                    </div>
+                    
+                    <h3 className="text-2xl font-black text-slate-800 mb-6">{user.full_name || '--'}</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 text-blue-500 font-medium">
+                        <Mail className="w-4 h-4" /> {user.email}
+                      </div>
+                      <div className="flex items-center gap-3 text-slate-600 font-medium">
+                        <Phone className="w-4 h-4" /> {user.phone || '+91 - Not Provided'}
+                      </div>
+                      <div className="flex items-center gap-3 text-slate-600 font-medium">
+                        <MapPin className="w-4 h-4" /> {user.address || 'Location Not Provided'}
+                      </div>
+                    </div>
+                </div>
+
+                {/* Verification Metadata Card */}
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full text-xs font-bold tracking-wider uppercase text-slate-600 mb-6 border border-slate-200">
+                      <Shield className="w-3.5 h-3.5" /> VERIFICATION
+                    </div>
+                    <div className="space-y-6">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Registration IP</p>
+                        <p className="text-slate-800 font-mono font-bold text-sm bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 inline-block">{user.ip_address || 'Capture Disabled'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">KYC Status</p>
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${user.profile_completed ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                          {user.profile_completed ? <CheckCircle className="w-3 h-3" /> : <RotateCw className="w-3 h-3" />}
+                          {user.profile_completed ? 'COMPLETED' : 'INCOMPLETE'}
+                        </div>
+                      </div>
+                    </div>
+                </div>
+              </div>
+
+              {/* Documents Section */}
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><FileText className="w-5 h-5" /></div>
+                  <h3 className="text-2xl font-black text-slate-800">Documents</h3>
                 </div>
                 
-                <h3 className="text-3xl font-black text-slate-800 mb-6">{user.full_name || '--'}</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-blue-500 font-medium">
-                     <Mail className="w-4 h-4" /> {user.email}
-                  </div>
-                  <div className="flex items-center gap-3 text-slate-600 font-medium">
-                     <Phone className="w-4 h-4" /> {user.phone || '+91 - Not Provided'}
-                  </div>
-                  <div className="flex items-center gap-3 text-slate-600 font-medium">
-                     <MapPin className="w-4 h-4" /> {user.address || 'Location Not Provided'}
-                  </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <DocumentWidget label="Live Photo" url={user.profile_photo_url} onView={() => onViewDoc({ label: "Live Photo", url: user.profile_photo_url })} />
+                    <DocumentWidget label="Aadhar Front" url={user.aadhaar_front_url} onView={() => onViewDoc({ label: "Aadhar Front", url: user.aadhaar_front_url })} />
+                    <DocumentWidget label="Aadhar Back" url={user.aadhaar_back_url} onView={() => onViewDoc({ label: "Aadhar Back", url: user.aadhaar_back_url })} />
+                    <DocumentWidget label="PAN Card" url={user.pan_card_url} onView={() => onViewDoc({ label: "PAN Card", url: user.pan_card_url })} />
+                    <DocumentWidget label="Signature" url={user.signature_url} onView={() => onViewDoc({ label: "Signature Scan", url: user.signature_url })} />
                 </div>
+              </div>
 
-                {/* Decorative avatar watermark */}
-                <div className="absolute -right-10 -bottom-10 w-48 h-48 opacity-[0.03] text-slate-900 pointer-events-none">
-                  <User className="w-full h-full" />
-                </div>
-             </div>
-
-             {/* Documents Section */}
-             <div>
-               <div className="flex items-center gap-3 mb-6">
-                 <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><FileText className="w-5 h-5" /></div>
-                 <h3 className="text-2xl font-black text-slate-800">Documents</h3>
-               </div>
-               
-               <div className="grid sm:grid-cols-2 gap-4">
-                  <DocumentWidget label="Aadhar Card (Front)" url={user.aadhaar_front_url} onView={() => onViewDoc({ label: "Aadhar Card (Front)", url: user.aadhaar_front_url })} />
-                  <DocumentWidget label="Aadhar Card (Back)" url={user.aadhaar_back_url} onView={() => onViewDoc({ label: "Aadhar Card (Back)", url: user.aadhaar_back_url })} />
-               </div>
-             </div>
-
-             {/* Exam Results Section */}
-             <div>
-               <h3 className="text-2xl font-black text-slate-800 mb-6 mt-12">Exam Results</h3>
-               
-               {loadingSubs ? (
-                 <div className="p-10 text-center text-slate-400 bg-white rounded-3xl border border-slate-100 flex flex-col items-center gap-3">
-                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
-                   Fetching examination data...
-                 </div>
-               ) : submissions.length === 0 ? (
-                 <div className="p-10 text-center text-slate-400 bg-white rounded-3xl border border-slate-100">
-                   No exam assessments completed by this candidate yet.
-                 </div>
-               ) : (
-                 <div className="space-y-4">
+              {/* Exam Results Section */}
+              <div>
+                <h3 className="text-2xl font-black text-slate-800 mb-6 mt-12">Exam Results</h3>
+                
+                {loadingSubs ? (
+                  <div className="p-10 text-center text-slate-400 bg-white rounded-3xl border border-slate-100 flex flex-col items-center gap-3">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
+                    Fetching examination data...
+                  </div>
+                ) : submissions.length === 0 ? (
+                  <div className="p-10 text-center text-slate-400 bg-white rounded-3xl border border-slate-100">
+                    No exam assessments completed by this candidate yet.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
                     {submissions.map(sub => (
-                       <MockResultCard key={sub.id} submission={sub} />
+                      <MockResultCard key={sub.id} submission={sub} />
                     ))}
-                 </div>
-               )}
-             </div>
+                  </div>
+                )}
+              </div>
 
-             {/* Close Profile Footer */}
-             <div className="pt-10 pb-6 flex justify-center">
+              {/* Close Profile Footer */}
+              <div className="pt-10 pb-6 flex justify-center">
                 <button onClick={onClose} className="px-8 py-3 bg-white text-slate-500 font-bold rounded-full border border-slate-200 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-sm flex items-center gap-2">
                   <X className="w-4 h-4" /> Close Profile
                 </button>
-             </div>
-          </div>
-
-          {/* Nested Document Viewer Overlay */}
-          <AnimatePresence>
-            {viewingDoc && (
-              <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-                <motion.div 
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
-                  onClick={() => setViewingDoc(null)}
-                />
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                  className="bg-slate-900 p-2 rounded-3xl shadow-2xl relative z-10 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
-                >
-                  <div className="flex justify-between items-center p-5 border-b border-white/10 shrink-0">
-                    <h4 className="text-white font-bold">{viewingDoc.label}</h4>
-                    <button onClick={() => setViewingDoc(null)} className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-auto rounded-2xl bg-black/50 m-2 flex justify-center items-center">
-                     <img src={viewingDoc.url} alt={viewingDoc.label} className="max-w-full max-h-full object-contain p-2" />
-                  </div>
-                  <div className="p-4 flex justify-end border-t border-white/10 shrink-0">
-                    <a href={viewingDoc.url} download target="_blank" rel="noreferrer" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors flex items-center gap-2 text-sm">
-                       <Download className="w-4 h-4" /> Open Original
-                    </a>
-                  </div>
-                </motion.div>
               </div>
-            )}
-          </AnimatePresence>
-
-        </motion.div>
-      </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </AnimatePresence>
   );
 };
