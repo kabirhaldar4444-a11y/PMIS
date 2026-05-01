@@ -550,7 +550,7 @@ const CreateUserModal = ({ isOpen, onClose, newUser, setNewUser, handleCreateUse
           />
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="bg-white max-w-[440px] w-full rounded-[1.5rem] shadow-2xl relative z-10 flex flex-col overflow-hidden border border-white/20"
+            className="bg-white max-w-[440px] w-full rounded-[1.5rem] shadow-2xl relative z-10 flex flex-col overflow-hidden border border-white/20 max-h-[90vh]"
           >
             {/* Header Section Matches Screenshot */}
             <div className={`p-6 flex justify-between items-start shrink-0 ${isAdmin ? 'bg-gradient-to-r from-purple-500 to-indigo-500' : 'bg-gradient-to-r from-blue-500 to-cyan-500'}`}>
