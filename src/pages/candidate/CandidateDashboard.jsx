@@ -143,18 +143,18 @@ const CandidateDashboard = () => {
 
         <main className="pt-40 px-6 max-w-6xl mx-auto space-y-16">
           {/* Hero Header Section */}
-          <header className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8 relative">
-            <div className="space-y-3 z-10">
+          <header className="flex flex-col md:flex-row items-center justify-between gap-8 relative">
+            <div className="space-y-3 z-10 flex-1">
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 bg-white/60 backdrop-blur-md border border-white/80 px-4 py-2 rounded-full shadow-sm w-fit">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Verified Profile</span>
                 </div>
               </motion.div>
-              <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-5xl md:text-7xl font-outfit font-black text-slate-900 tracking-tight leading-[1.1]">
-                My <br className="hidden md:block"/> Assessments
+              <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-6xl font-outfit font-black text-slate-900 tracking-tighter leading-none whitespace-nowrap">
+                My Assessments
               </motion.h1>
-              <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-slate-500 font-medium text-lg flex items-center gap-2">
+              <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-slate-500 font-medium text-base flex items-center gap-2">
                 Welcome back, <span className="text-primary-600 font-bold bg-primary-50 px-3 py-1 rounded-lg border border-primary-100/50">{profile?.full_name?.split(' ')[0] || 'Candidate'}</span>
               </motion.p>
             </div>

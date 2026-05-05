@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../utils/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -15,7 +15,9 @@ import {
   AlertCircle,
   FileText,
   BookOpen,
-  Layout
+  Layout,
+  Code,
+  FileJson
 } from 'lucide-react';
 import { useAlert } from '../../context/AlertProvider';
 import * as XLSX from 'xlsx';
@@ -24,6 +26,14 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
   const { showAlert, confirm } = useAlert();
   const [exams, setExams] = useState([]);
   const [selectedExam, setSelectedExam] = useState(null);
+  const editorPreRef = useRef(null);
+  const editorTextareaRef = useRef(null);
+
+  const handleEditorScroll = () => {
+    if (editorTextareaRef.current && editorPreRef.current) {
+      editorPreRef.current.scrollTop = editorTextareaRef.current.scrollTop;
+    }
+  };
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -43,6 +53,8 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
 
   // Excel Upload State
   const [isExcelPreviewOpen, setIsExcelPreviewOpen] = useState(false);
+  const [isJsonPasteOpen, setIsJsonPasteOpen] = useState(false);
+  const [jsonPayload, setJsonPayload] = useState('');
   const [parsedData, setParsedData] = useState(null);
   const [shuffleQuestions, setShuffleQuestions] = useState(false);
   const [shuffleOptions, setShuffleOptions] = useState(false);
@@ -205,7 +217,7 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
         const ws = wb.Sheets[wb.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(ws);
         
-        parseExcelData(jsonData);
+        processImportedData(jsonData);
       } catch (err) {
         console.error(err);
         showAlert('Failed to parse file. Please ensure it is a valid .xlsx or .csv format.', 'error');
@@ -214,64 +226,144 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
     reader.readAsArrayBuffer(file);
   };
 
-  const parseExcelData = (rows) => {
+  const highlightJson = (code) => {
+    if (!code) return '';
+    
+    const themes = ['text-indigo-400', 'text-emerald-400', 'text-amber-400', 'text-fuchsia-400', 'text-cyan-400', 'text-rose-400'];
+    let themeIdx = -1;
+    let level = 0;
+    let result = '';
+    
+    // Escaping HTML characters
+    const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
+    // Simple state machine for block highlighting
+    for (let i = 0; i < escaped.length; i++) {
+      const char = escaped[i];
+      
+      if (char === '{') {
+        level++;
+        if (level === 2) themeIdx = (themeIdx + 1) % themes.length;
+      }
+      
+      const currentTheme = (level >= 2 && themeIdx !== -1) ? themes[themeIdx] : 'text-slate-500';
+      result += `<span class="${currentTheme}">${char}</span>`;
+      
+      if (char === '}') {
+        level--;
+      }
+    }
+    
+    return result;
+  };
+
+  const handleJsonPaste = () => {
+    try {
+      const parsed = JSON.parse(jsonPayload);
+      let data = parsed;
+      
+      // Intelligent support for { "data": [...] } wrapper or direct array
+      if (!Array.isArray(parsed) && parsed.data && Array.isArray(parsed.data)) {
+        data = parsed.data;
+      }
+
+      if (!Array.isArray(data)) {
+        throw new Error('Payload must be a JSON array of question objects or an object with a "data" array.');
+      }
+      
+      processImportedData(data);
+      setIsJsonPasteOpen(false);
+      setJsonPayload('');
+    } catch (err) {
+      showAlert(err.message, 'error');
+    }
+  };
+
+  const processImportedData = (rows) => {
     let parsed = [];
     let validCount = 0;
+
+    // Intelligent Detection: Check if the dataset uses 1-based indexing (contains '4')
+    const isOneBased = rows.some(row => {
+      const keys = Object.keys(row);
+      const match = keys.find(k => ['correct_option', 'correctoption', 'answer', 'correct', 'ans', 'right_option'].some(p => k.toLowerCase().trim().includes(p)));
+      return match && String(row[match]).trim() === '4';
+    });
     
     rows.forEach((row, i) => {
-      // Find properties with case insensitive logic to support both Format 1 and Format 2
+      // Find properties with intelligent case-insensitive and fuzzy mapping
       const keys = Object.keys(row);
       const getVal = (possible) => {
-        const match = keys.find(k => possible.includes(k.toLowerCase().trim()));
+        const match = keys.find(k => possible.some(p => k.toLowerCase().trim().includes(p)));
         return match ? row[match] : '';
       };
 
-      const qText = getVal(['question', 'question text']);
-      const o1 = getVal(['opt1', 'option a', 'option 1', 'optiona']);
-      const o2 = getVal(['opt2', 'option b', 'option 2', 'optionb']);
-      const o3 = getVal(['opt3', 'option c', 'option 3', 'optionc']);
-      const o4 = getVal(['opt4', 'option d', 'option 4', 'optiond']);
-      const rawAns = getVal(['correct_option', 'answer', 'correct option', 'correct answer']);
-      const exp = getVal(['description', 'explanation', 'desc']);
+      const qText = getVal(['question', 'question_text', 'text', 'q_text', 'qtext']);
+      
+      // Intelligent Options Detection
+      let opts = ['', '', '', ''];
+      if (Array.isArray(row.options) && row.options.length >= 2) {
+        opts = [...row.options, '', '', ''].slice(0, 4);
+      } else {
+        opts[0] = String(getVal(['opt1', 'option_a', 'option 1', 'optiona', 'choice1', 'choice_a']) || '');
+        opts[1] = String(getVal(['opt2', 'option_b', 'option 2', 'optionb', 'choice2', 'choice_b']) || '');
+        opts[2] = String(getVal(['opt3', 'option_c', 'option 3', 'optionc', 'choice3', 'choice_c']) || '');
+        opts[3] = String(getVal(['opt4', 'option_d', 'option 4', 'optiond', 'choice4', 'choice_d']) || '');
+      }
 
-      const optsFull = [o1, o2, o3, o4].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
-      const opts = [o1||'', o2||'', o3||'', o4||''];
+      const rawAns = getVal(['correct_option', 'correctoption', 'answer', 'correct', 'ans', 'right_option']);
+      const exp = getVal(['description', 'explanation', 'desc', 'info']);
 
+      const optsFull = opts.filter(v => v !== undefined && v !== null && String(v).trim() !== '');
+      
       let cidx = -1;
       let error = '';
 
       if (!qText) {
          error = 'Missing Question text.';
-      } else if (optsFull.length < 4) {
-         error = 'Must provide all 4 options.';
+      } else if (optsFull.length < 2) {
+         error = 'At least 2 options are required.';
       } else if (rawAns === undefined || rawAns === '') {
          error = 'Missing Correct Answer.';
       } else {
         let ansStr = String(rawAns).trim().toLowerCase();
-        // Option 1: Index based (0, 1, 2, 3)
-        if (['0','1','2','3'].includes(ansStr)) {
-           cidx = parseInt(ansStr);
+        
+        // Intelligent Answer Mapping
+        // 1. Index based (handles both 0-3 and 1-4 automatically)
+        if (['0','1','2','3','4'].includes(ansStr)) {
+           const num = parseInt(ansStr);
+           if (isOneBased && num > 0) {
+              cidx = num - 1;
+           } else {
+              cidx = num;
+           }
         }
-        // Option 2: Alpha based (a, b, c, d)
+        // 2. Alpha based (a, b, c, d)
         else if (['a','b','c','d'].includes(ansStr)) {
            cidx = ['a','b','c','d'].indexOf(ansStr);
         }
-        // Option 3: Exact String Match
+        // 3. Exact String Match (Smart Search)
         else {
            const exactIdx = opts.findIndex(opt => String(opt).trim().toLowerCase() === ansStr);
            if (exactIdx !== -1) {
              cidx = exactIdx;
            } else {
-             error = `Invalid Answer value: "${rawAns}". Does not match A-D or exact text.`;
+             // 4. Fuzzy Letter Match (e.g. "Option A", "A.")
+             const letterMatch = ansStr.match(/^[a-d][\s.)]*/);
+             if (letterMatch) {
+                cidx = ['a','b','c','d'].indexOf(letterMatch[0][0]);
+             } else {
+                error = `Invalid Answer: "${rawAns}". Could not map to any option.`;
+             }
            }
         }
       }
 
       parsed.push({
-        _internal_id: i, // key 
-        rowNum: i + 2, // Accounting for header
+        _internal_id: i,
+        rowNum: i + 1,
         question_text: String(qText || ''),
-        options: opts.map(String),
+        options: opts.map(o => String(o || '')),
         correct_option: cidx !== -1 ? cidx : 0,
         explanation: String(exp || ''),
         valid: error === '',
@@ -358,10 +450,21 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
             </button>
             <h2 className="text-3xl font-black text-slate-800 tracking-tight">{selectedExam.title} <span className="text-slate-400 font-medium ml-1">Questions</span></h2>
             
-            <div className="ml-auto">
-               <label className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl flex items-center gap-2 cursor-pointer shadow-lg shadow-indigo-500/30 transition-all active:scale-95">
-                 <Upload className="w-4 h-4"/> Upload Excel
-                 <input type="file" accept=".xlsx" onChange={handleFileUpload} className="hidden" />
+            <div className="ml-auto flex items-center gap-4">
+               <button 
+                 onClick={() => setIsJsonPasteOpen(true)} 
+                 className="group relative overflow-hidden bg-slate-900 text-white font-black py-3.5 px-7 rounded-[18px] flex items-center gap-2.5 transition-all hover:shadow-[0_10px_30px_rgba(15,23,42,0.3)] hover:-translate-y-0.5 active:scale-95"
+               >
+                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                 <FileJson className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" /> 
+                 <span className="text-[13px] tracking-tight">Paste JSON</span>
+               </button>
+
+               <label className="group relative overflow-hidden bg-white text-slate-800 font-black py-3.5 px-7 rounded-[18px] flex items-center gap-2.5 cursor-pointer border border-slate-200 shadow-sm transition-all hover:border-indigo-400 hover:shadow-[0_10px_30px_rgba(79,70,229,0.1)] hover:-translate-y-0.5 active:scale-95">
+                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                 <Upload className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" /> 
+                 <span className="text-[13px] tracking-tight">Upload Excel/CSV</span>
+                 <input type="file" accept=".xlsx,.csv" onChange={handleFileUpload} className="hidden" />
                </label>
             </div>
          </div>
@@ -509,17 +612,138 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
             </div>
          </div>
 
-         {/* EXCEL PREVIEW MODAL */}
+         {/* JSON PASTE MODAL */}
+         <AnimatePresence>
+            {isJsonPasteOpen && (
+              <div className="fixed inset-0 z-[500] flex items-center justify-center p-6">
+                <motion.div 
+                  initial={{opacity:0}} 
+                  animate={{opacity:1}} 
+                  exit={{opacity:0}} 
+                  onClick={() => setIsJsonPasteOpen(false)} 
+                  className="absolute inset-0 bg-slate-950/40 backdrop-blur-md shadow-2xl" 
+                />
+                <motion.div 
+                  initial={{scale:0.9, y:40, opacity:0}} 
+                  animate={{scale:1, y:0, opacity:1}} 
+                  exit={{scale:0.9, y:40, opacity:0}} 
+                  className="bg-[#0b0f1a] max-w-3xl w-full rounded-[2.5rem] flex flex-col overflow-hidden relative z-10 shadow-[0_0_100px_rgba(79,70,229,0.2)] border border-slate-800/50"
+                >
+                   {/* EDITOR HEADER - VIBRANT NEON */}
+                   <div className="px-8 py-7 border-b border-white/5 bg-gradient-to-r from-indigo-900/40 via-fuchsia-900/20 to-transparent flex justify-between items-center relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50" />
+                      <div className="flex items-center gap-5">
+                         <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-[20px] flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] ring-4 ring-indigo-500/10">
+                            <FileJson className="w-7 h-7 text-white" />
+                         </div>
+                         <div>
+                            <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">Payload Editor <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30 uppercase tracking-tighter ml-1">JSON v2</span></h3>
+                            <div className="flex items-center gap-2 mt-1">
+                               <div className="flex gap-1">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse delay-75" />
+                                  <div className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse delay-150" />
+                               </div>
+                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Intelligent Syntax Mapping</span>
+                            </div>
+                         </div>
+                      </div>
+                      <button onClick={() => setIsJsonPasteOpen(false)} className="w-12 h-12 flex items-center justify-center hover:bg-white/10 rounded-2xl transition-all group active:scale-90">
+                        <X className="w-6 h-6 text-slate-500 group-hover:text-white transition-colors" />
+                      </button>
+                   </div>
+
+                   <div className="p-8 relative bg-[#0b0f1a] flex-1 overflow-hidden">
+                      <div className="absolute left-10 top-8 bottom-8 w-[1px] bg-indigo-500/20 z-20" />
+                      
+                      <div className="relative w-full h-[450px]">
+                         {/* PRE - THE HIGHLIGHTED LAYER */}
+                         <pre 
+                           ref={editorPreRef}
+                           className="absolute inset-0 pl-12 pr-6 py-0 m-0 pointer-events-none whitespace-pre-wrap break-words overflow-hidden font-mono text-[14px] leading-[22px] tracking-tight text-slate-500 select-none border-none bg-transparent"
+                           dangerouslySetInnerHTML={{ __html: highlightJson(jsonPayload) || '<span class="opacity-30">Waiting for payload...</span>' }}
+                         />
+                         
+                         {/* TEXTAREA - THE INPUT LAYER */}
+                         <textarea 
+                           ref={editorTextareaRef}
+                           onScroll={handleEditorScroll}
+                           className="absolute inset-0 pl-12 pr-6 py-0 bg-transparent text-transparent caret-fuchsia-400 font-mono text-[14px] leading-[22px] tracking-tight focus:outline-none resize-none custom-scrollbar selection:bg-fuchsia-500/30 overflow-y-auto border-none w-full h-full"
+                           spellCheck="false"
+                           placeholder='{
+  "title": "Exam Title",
+  "data": [
+    {
+      "question": "Sample Question?",
+      "options": ["A", "B", "C", "D"],
+      "answer": 1
+    }
+  ]
+}'
+                           value={jsonPayload}
+                           onChange={e => setJsonPayload(e.target.value)}
+                         />
+                      </div>
+                   </div>
+
+                   <div className="px-10 py-8 border-t border-white/5 bg-[#1e293b]/10 flex justify-between items-center">
+                      <div className="flex flex-col gap-1">
+                         <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Compiler Status</p>
+                         <p className="text-[12px] font-medium text-indigo-400/80 italic">Ready for smart injection...</p>
+                      </div>
+                      <div className="flex gap-5">
+                         <button 
+                           onClick={() => setIsJsonPasteOpen(false)} 
+                           className="px-8 py-4 rounded-2xl font-black text-slate-500 hover:text-white transition-all text-xs uppercase tracking-widest"
+                         >
+                           Discard
+                         </button>
+                         <button 
+                           onClick={handleJsonPaste} 
+                           disabled={!jsonPayload.trim()} 
+                           className="group relative px-12 py-4 rounded-2xl font-black text-white overflow-hidden transition-all active:scale-95 disabled:opacity-30"
+                         >
+                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-fuchsia-600 group-hover:from-indigo-500 group-hover:to-fuchsia-500 transition-all" />
+                            <div className="absolute inset-0 bg-[rgba(255,255,255,0.1)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <span className="relative z-10 flex items-center gap-2 text-xs uppercase tracking-[0.15em]">
+                               Compile & Process <ArrowLeft className="w-4 h-4 rotate-180" />
+                            </span>
+                         </button>
+                      </div>
+                   </div>
+                </motion.div>
+              </div>
+            )}
+         </AnimatePresence>
+
+         {/* EXCEL/CSV PREVIEW MODAL */}
          <AnimatePresence>
             {isExcelPreviewOpen && parsedData && (
               <div className="fixed inset-0 z-[500] flex items-center justify-center p-6">
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={() => setIsExcelPreviewOpen(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm shadow-2xl" />
+                <motion.div 
+                  initial={{opacity:0}} 
+                  animate={{opacity:1}} 
+                  exit={{opacity:0}} 
+                  onClick={() => setIsExcelPreviewOpen(false)} 
+                  className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm shadow-2xl" 
+                />
                 
-                <motion.div initial={{scale:0.95, y:20, opacity:0}} animate={{scale:1, y:0, opacity:1}} exit={{scale:0.95, y:20, opacity:0}} transition={{ duration: 0.15, ease: 'easeOut' }} className="bg-white max-w-5xl w-full h-[85vh] rounded-[2rem] flex flex-col overflow-hidden relative z-10 shadow-2xl">
-                   <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
-                      <div>
-                         <h3 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2"><Upload className="w-6 h-6 text-indigo-500" /> Excel Validation Preview</h3>
-                         <p className="text-sm font-medium text-slate-500 mt-1">Review the {parsedData.total} questions detected. Errant rows will be dropped on save.</p>
+                <motion.div 
+                  initial={{scale:0.95, y:20, opacity:0}} 
+                  animate={{scale:1, y:0, opacity:1}} 
+                  exit={{scale:0.95, y:20, opacity:0}} 
+                  transition={{ duration: 0.15, ease: 'easeOut' }} 
+                  className="bg-white max-w-5xl w-full h-[85vh] rounded-[2.5rem] flex flex-col overflow-hidden relative z-10 shadow-[0_50px_100px_rgba(0,0,0,0.1)] border border-slate-200"
+                >
+                   <div className="px-10 py-7 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
+                      <div className="flex items-center gap-6">
+                         <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100">
+                            <Upload className="w-7 h-7 text-indigo-600" />
+                         </div>
+                         <div>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Validation Output</h3>
+                            <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-wider">Found {parsedData.total} questions • Review before final injection</p>
+                         </div>
                       </div>
                       <div className="flex gap-4">
                          <div className="text-center px-4 py-1.5 bg-emerald-50 rounded-xl border border-emerald-100">
@@ -533,46 +757,64 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
                       </div>
                    </div>
 
-                   <div className="flex-1 overflow-y-auto p-6 bg-slate-50 custom-scrollbar space-y-4">
-                      {parsedData.rows.map(row => (
-                         <div key={row._internal_id} className={`p-5 rounded-2xl border transition-all ${row.valid ? 'bg-white border-slate-200' : 'bg-rose-50 border-rose-200'}`}>
-                            <div className="flex justify-between items-start mb-3">
-                               <div className="flex items-center gap-3">
-                                  <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-black">ROW {row.rowNum}</span>
-                                  {!row.valid && <span className="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-rose-100/50 px-2.5 py-1 rounded-full"><AlertCircle className="w-3.5 h-3.5"/> {row.error_msg}</span>}
-                               </div>
-                               {row.valid && <CheckCircle className="w-5 h-5 text-emerald-500" />}
-                            </div>
-                            
-                            <h4 className={`font-bold text-sm mb-4 ${row.valid ? 'text-slate-800' : 'text-slate-600'}`}>{row.question_text || '(Empty Question)'}</h4>
-                            
-                            <div className="grid md:grid-cols-4 gap-2">
-                               {row.options.map((opt, i) => (
-                                  <div key={i} className={`p-2 rounded-lg border text-xs leading-relaxed truncate ${row.valid && row.correct_option === i ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-slate-50 border-slate-100 text-slate-500'}`}>
-                                     <span className="font-bold mr-1 opacity-50">{String.fromCharCode(65+i)}.</span> {opt}
+                   <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50 custom-scrollbar space-y-6">
+                      {parsedData.rows.map((row, idx) => {
+                         const isValid = row.valid;
+                         
+                         return (
+                            <div key={row._internal_id} className={`p-6 bg-white rounded-[1.5rem] border transition-all ${isValid ? 'border-slate-100 shadow-sm hover:shadow-md' : 'border-rose-100 bg-rose-50/30'}`}>
+                               <div className="flex justify-between items-start mb-5">
+                                  <div className="flex items-center gap-4">
+                                     <span className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase ${isValid ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-500'}`}>ITEM {row.rowNum}</span>
+                                     {!isValid && (
+                                        <span className="flex items-center gap-2 text-[10px] font-black text-rose-500 bg-rose-100/50 px-3 py-1 rounded-lg border border-rose-200 uppercase tracking-widest">
+                                           <AlertCircle className="w-3 h-3"/> {row.error_msg}
+                                        </span>
+                                     )}
                                   </div>
-                               ))}
+                                  {isValid && <CheckCircle className="w-6 h-6 text-emerald-500 opacity-80" />}
+                               </div>
+                               
+                               <h4 className={`font-bold text-[15px] leading-relaxed mb-6 ${isValid ? 'text-slate-800' : 'text-rose-900'}`}>
+                                  <span className="mr-2 text-slate-300 font-mono text-xs">{idx + 1}.</span>
+                                  {row.question_text || '(Empty Question Statement)'}
+                                </h4>
+                               
+                               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                  {row.options.map((opt, i) => {
+                                     const isCorrect = isValid && row.correct_option === i;
+                                     return (
+                                        <div 
+                                          key={i} 
+                                          className={`p-3.5 rounded-xl border text-[12px] leading-relaxed transition-all flex items-start gap-3 ${isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm shadow-emerald-500/10' : 'bg-slate-50 border-slate-100 text-slate-600'}`}
+                                        >
+                                           <span className={`font-black ${isCorrect ? 'text-emerald-500' : 'text-slate-300'}`}>{String.fromCharCode(65+i)}</span>
+                                           <span className={isCorrect ? 'font-bold' : 'font-medium'}>{opt}</span>
+                                        </div>
+                                     );
+                                  })}
+                               </div>
                             </div>
-                         </div>
-                      ))}
+                         );
+                      })}
                    </div>
 
-                   <div className="p-6 border-t border-slate-100 bg-white flex justify-between items-center shrink-0">
-                      <div className="flex gap-6">
-                         <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer select-none hover:text-indigo-600">
-                           <input type="checkbox" className="w-4 h-4 rounded text-indigo-500 border-slate-300 focus:ring-indigo-500" checked={shuffleQuestions} onChange={e => setShuffleQuestions(e.target.checked)} />
-                           Shuffle Questions
+                   <div className="px-10 py-7 border-t border-slate-100 bg-white flex justify-between items-center shrink-0">
+                      <div className="flex gap-8">
+                         <label className="flex items-center gap-3 text-xs font-black text-slate-400 cursor-pointer select-none hover:text-indigo-600 transition-colors uppercase tracking-widest">
+                           <input type="checkbox" className="w-5 h-5 rounded-lg text-indigo-500 bg-slate-50 border-slate-200 focus:ring-offset-0 focus:ring-transparent" checked={shuffleQuestions} onChange={e => setShuffleQuestions(e.target.checked)} />
+                           Shuffle Items
                          </label>
-                         <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer select-none hover:text-indigo-600">
-                           <input type="checkbox" className="w-4 h-4 rounded text-indigo-500 border-slate-300 focus:ring-indigo-500" checked={shuffleOptions} onChange={e => setShuffleOptions(e.target.checked)} />
-                           Shuffle Options inside Questions
+                         <label className="flex items-center gap-3 text-xs font-black text-slate-400 cursor-pointer select-none hover:text-indigo-600 transition-colors uppercase tracking-widest">
+                           <input type="checkbox" className="w-5 h-5 rounded-lg text-indigo-500 bg-slate-50 border-slate-200 focus:ring-offset-0 focus:ring-transparent" checked={shuffleOptions} onChange={e => setShuffleOptions(e.target.checked)} />
+                           Randomize Options
                          </label>
                       </div>
                       
-                      <div className="flex gap-3">
-                         <button disabled={processing} onClick={() => setIsExcelPreviewOpen(false)} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100">Cancel</button>
-                         <button disabled={processing || parsedData.validCount === 0} onClick={handleSaveBulkUpload} className="px-8 py-3 rounded-xl font-bold text-white bg-indigo-500 hover:bg-indigo-600 shadow-md flex items-center gap-2">
-                            {processing ? <Loader2 className="animate-spin w-4 h-4" /> : `Save ${parsedData.validCount} Valid Questions`}
+                      <div className="flex gap-4">
+                         <button disabled={processing} onClick={() => setIsExcelPreviewOpen(false)} className="px-8 py-4 rounded-xl font-black text-slate-400 hover:text-slate-600 transition-all text-xs uppercase tracking-widest">Discard</button>
+                         <button disabled={processing || parsedData.validCount === 0} onClick={handleSaveBulkUpload} className="px-10 py-4 rounded-xl font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 disabled:opacity-30 disabled:shadow-none transition-all active:scale-95 text-xs uppercase tracking-[0.1em]">
+                            {processing ? <Loader2 className="animate-spin w-4 h-4" /> : `Import ${parsedData.validCount} Questions`}
                          </button>
                       </div>
                    </div>
@@ -622,22 +864,24 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
              <p className="text-slate-500 font-bold">No exams created yet.</p>
            </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
              {exams.map(exam => (
-                <div key={exam.id} className="bg-white p-6 rounded-[24px] shadow-[0_4px_30px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col group hover:border-indigo-200 hover:shadow-lg transition-all">
-                   <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center mb-5 text-white shadow-inner">
-                      <FileText className="w-6 h-6" />
+                <div key={exam.id} className="bg-white p-5 rounded-[22px] shadow-[0_4px_30px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col group hover:border-indigo-200 hover:shadow-lg transition-all ring-1 ring-transparent hover:ring-indigo-100/50">
+                   <div className="flex items-center justify-between mb-4">
+                      <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0">
+                         <FileText className="w-5 h-5" />
+                      </div>
+                      <div className="text-slate-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100 shadow-sm">
+                         <Clock className="w-3 h-3 text-indigo-500" /> {exam.duration}m
+                      </div>
                    </div>
-                   <h4 className="font-bold text-xl text-slate-900 mb-1.5 tracking-tight group-hover:text-indigo-600 transition-colors line-clamp-1">{exam.title}</h4>
-                   <p className="text-slate-500 text-xs font-bold flex items-center gap-1.5 mb-8 bg-slate-50 w-max px-3 py-1.5 rounded-lg border border-slate-100">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" /> {exam.duration} Minutes Duration
-                   </p>
-                   <div className="mt-auto grid grid-cols-2 gap-3 pb-1">
-                      <button onClick={() => handleSelectExam(exam)} className="bg-[#1e58f0] hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-[13px] transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 hover:-translate-y-0.5">
-                         <Settings className="w-4 h-4"/> Manage Questions
+                   <h4 className="font-black text-[15px] text-slate-900 mb-6 leading-tight group-hover:text-indigo-600 transition-colors break-words">{exam.title}</h4>
+                   <div className="mt-auto flex gap-2">
+                      <button onClick={() => handleSelectExam(exam)} className="flex-1 bg-[#1e58f0] hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-[11px] transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-500/10 active:scale-95">
+                         <Settings className="w-3.5 h-3.5"/> Manage
                       </button>
-                      <button onClick={() => handleDeleteExam(exam.id)} className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white font-bold py-3.5 rounded-xl text-[13px] transition-all flex items-center justify-center gap-1.5 group/delete">
-                         <Trash2 className="w-4 h-4 group-hover/delete:scale-110 transition-transform"/> Delete
+                      <button onClick={() => handleDeleteExam(exam.id)} className="flex-1 bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white font-bold py-2.5 rounded-xl text-[11px] transition-all flex items-center justify-center gap-2 group/delete active:scale-95">
+                         <Trash2 className="w-3.5 h-3.5 group-hover/delete:scale-110 transition-transform"/> Delete
                       </button>
                    </div>
                 </div>

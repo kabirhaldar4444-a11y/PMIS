@@ -81,27 +81,22 @@ const AdminDashboard = () => {
         </div>
       </nav>
 
-      <main className={`px-6 max-w-7xl mx-auto page-transition ${isSubView ? 'pt-20' : 'pt-32'}`}>
+      <main className={`px-6 max-w-7xl mx-auto page-transition ${isSubView ? 'pt-36' : 'pt-32'}`}>
 
 
 
         {!isSubView && (
-          <>
-            <header className="mb-4">
-
-
-              <h1 className="text-4xl font-outfit font-black text-slate-900 mb-2">Admin Dashboard</h1>
-              <p className="text-slate-500 font-medium">Manage exams and candidate accounts from here.</p>
-            </header>
-            <div className="flex justify-center mb-6">
-
-
-              <div className="bg-white/60 backdrop-blur-xl p-1.5 flex gap-1 rounded-2xl shadow-sm border border-slate-100/50">
-                <TabButton active={activeTab === 'exams'} onClick={() => setActiveTab('exams')} icon={BookOpen} label="Exam Management" />
-                <TabButton active={activeTab === 'students'} onClick={() => setActiveTab('students')} icon={Users} label="User & Access Management" />
-              </div>
+          <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+            <div>
+              <h1 className="text-4xl font-outfit font-black text-slate-900 mb-1">Admin Dashboard</h1>
+              <p className="text-slate-500 font-medium text-sm">Manage exams and candidate accounts from here.</p>
             </div>
-          </>
+            
+            <div className="bg-white/60 backdrop-blur-xl p-1.5 flex gap-1 rounded-[22px] shadow-sm border border-slate-100/50 w-max">
+              <TabButton active={activeTab === 'exams'} onClick={() => setActiveTab('exams')} icon={BookOpen} label="Exam Management" />
+              <TabButton active={activeTab === 'students'} onClick={() => setActiveTab('students')} icon={Users} label="User & Access Management" />
+            </div>
+          </header>
         )}
 
         <div className="w-full">

@@ -90,31 +90,6 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Registered Address & Location</label>
-               <div className="bg-slate-50 border border-slate-100 p-5 rounded-3xl flex items-start gap-4 group hover:bg-white hover:border-blue-100 transition-all">
-                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors shrink-0">
-                    <MapPin className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-4">
-                    <p className="font-bold text-slate-700 leading-relaxed text-lg">{profile?.address || 'Complete address not found'}</p>
-                    <div className="flex gap-10 pt-4 border-t border-slate-200/50">
-                      <div>
-                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest block mb-1">City</span>
-                        <div className="flex items-center gap-2">
-                          <Building className="w-3.5 h-3.5 text-blue-500" />
-                          <span className="font-black text-slate-800 text-sm uppercase">{city}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest block mb-1">State</span>
-                        <span className="font-black text-slate-800 text-sm uppercase">{state}</span>
-                      </div>
-                    </div>
-                  </div>
-               </div>
-            </div>
-
             {/* Subtle Footer branding */}
             <div className="pt-10 flex items-center justify-center gap-4 opacity-30">
                <PMISLogo size={40} />

@@ -14,7 +14,9 @@ import {
   ShieldCheck,
   CheckCircle,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Bookmark,
+  Check
 } from 'lucide-react';
 import { useAlert } from '../../context/AlertProvider';
 import PMISLogo from '../../components/common/PMISLogo';
@@ -35,11 +37,13 @@ const ExamPortal = () => {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [hasAcceptedDeclaration, setHasAcceptedDeclaration] = useState(false);
   const [acceptedCheckbox, setAcceptedCheckbox] = useState(false);
+  const [reviewed, setReviewed] = useState({});
 
   // Refs for persistence to avoid dependency loops in interval
   const answersRef = useRef({});
   const indexRef = useRef(0);
   const timeRef = useRef(null);
+  const reviewedRef = useRef({});
 
   // 1. Initial Load
   useEffect(() => {
@@ -59,10 +63,12 @@ const ExamPortal = () => {
           setAnswers(parsed.answers || {});
           setCurrentIdx(parsed.index || 0);
           setTimeLeft(parsed.timeLeft !== undefined ? parsed.timeLeft : examData.duration * 60);
+          setReviewed(parsed.reviewed || {});
           
           answersRef.current = parsed.answers || {};
           indexRef.current = parsed.index || 0;
           timeRef.current = parsed.timeLeft !== undefined ? parsed.timeLeft : examData.duration * 60;
+          reviewedRef.current = parsed.reviewed || {};
         } else {
           const initialTime = examData.duration * 60;
           setTimeLeft(initialTime);
@@ -93,7 +99,8 @@ const ExamPortal = () => {
         const stateToSave = {
           answers: answersRef.current,
           index: indexRef.current,
-          timeLeft: timeRef.current
+          timeLeft: timeRef.current,
+          reviewed: reviewedRef.current
         };
         localStorage.setItem(`exam_sync_${examId}`, JSON.stringify(stateToSave));
       }
@@ -109,9 +116,14 @@ const ExamPortal = () => {
   // Sync state to refs whenever state changes (for the interval to use)
   useEffect(() => { answersRef.current = answers; }, [answers]);
   useEffect(() => { indexRef.current = currentIdx; }, [currentIdx]);
+  useEffect(() => { reviewedRef.current = reviewed; }, [reviewed]);
 
   const handleAnswer = (optionIdx) => {
     setAnswers(prev => ({ ...prev, [currentIdx]: optionIdx }));
+  };
+
+  const toggleReview = () => {
+    setReviewed(prev => ({ ...prev, [currentIdx]: !prev[currentIdx] }));
   };
 
   const calculateScore = () => {
@@ -294,211 +306,247 @@ const ExamPortal = () => {
   }
 
   return (
-    <div className="flex flex-col bg-slate-50 select-none page-transition">
-
-      {/* Slim Top Navigation Strip */}
-      <header className="fixed top-0 left-0 right-0 z-[100] px-4 py-3">
-        <div className="max-w-7xl mx-auto bg-white/80 backdrop-blur-2xl border border-white/50 rounded-full px-6 py-2 flex items-center justify-between shadow-xl">
-          <div className="flex items-center">
-            <PMISLogo variant="navbar" />
+    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden select-none page-transition font-outfit relative">
+      {/* Light Cyberpunk Decorative Orbs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/15 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[30%] h-[40%] bg-magenta-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-[20%] right-[15%] w-[20%] h-[20%] bg-slate-900/5 rounded-full blur-[100px] pointer-events-none" />
+      
+      {/* Top Header */}
+      <header className="absolute top-0 left-0 right-0 h-20 bg-white/60 backdrop-blur-2xl border-b border-white/60 px-6 lg:px-10 flex items-center justify-between z-50 shadow-[0_4px_30px_rgba(0,0,0,0.03)]">
+        <div className="flex items-center gap-6">
+          <div className="border border-white/80 rounded-xl px-3 py-1.5 bg-white/40 backdrop-blur-md shadow-sm">
+            <PMISLogo variant="navbar" className="h-6" />
           </div>
-
+          <div className="w-[1px] h-8 bg-slate-200/60 hidden md:block"></div>
+          <div>
+            <div className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase">Live Assessment</div>
+            <div className="text-base font-black text-slate-900 uppercase tracking-tight">{exam?.title || 'EXAM TITLE'}</div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-6">
           <button 
             onClick={() => handleSubmit()}
             disabled={submitting}
-            className="px-6 py-2 bg-blue-600 text-white rounded-full text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
+            className="px-6 py-2.5 bg-cyan-600/90 backdrop-blur-md text-white rounded-full text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-cyan-600 transition-all shadow-lg shadow-cyan-500/20 border border-cyan-500/30 disabled:opacity-50"
           >
-            {submitting ? 'Syncing...' : 'Submit Exam'} <CheckCircle className="w-3.5 h-3.5" />
+            {submitting ? 'Syncing...' : 'Submit Exam'} <Check className="w-4 h-4" />
           </button>
+          
+          <div className="flex items-center gap-2 bg-white/50 backdrop-blur-md border border-white/60 px-4 py-2 rounded-full shadow-sm">
+            <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase mr-1">Time Left</span>
+            <Clock className="w-4 h-4 text-slate-900" />
+            <span className="text-lg font-black text-slate-900">{formatTime(timeLeft)}</span>
+          </div>
         </div>
       </header>
 
-      {/* Sub-Header HUD - Tightened */}
-      <div className="mt-24 px-8 max-w-7xl mx-auto w-full flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
-
-        <div className="space-y-1 text-center md:text-left">
-          <div className="flex items-center gap-2 justify-center md:justify-start">
-            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Secure Session</span>
-          </div>
-          <h2 className="text-3xl font-outfit font-black text-slate-900 leading-tight tracking-tight">{exam?.title}</h2>
-        </div>
-
-        <div className="flex items-center gap-10">
-          <div className="bg-white/60 backdrop-blur-md border border-slate-200 rounded-3xl px-8 py-3 shadow-sm flex items-center gap-6">
-            <div className="text-center md:text-right">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">Time Remaining</span>
-              <div className={`flex items-center gap-3 font-mono text-2xl font-black ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-slate-900'}`}>
-                 <Clock className={`w-5 h-5 ${timeLeft < 300 ? 'text-red-500' : 'text-blue-500'}`} />
-                 {formatTime(timeLeft)}
+      <div className="flex w-full h-full pt-20">
+        {/* Main Content Area */}
+        <main className="flex-1 flex flex-col p-6 lg:p-8 overflow-hidden">
+          <div className="max-w-4xl w-full mx-auto flex flex-col h-full">
+            
+            {/* Question Header & Progress */}
+            <div className="flex items-center justify-between mb-6 flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Question</span>
+                <div className="bg-slate-900 text-white w-9 h-9 rounded-xl flex items-center justify-center font-black shadow-lg shadow-slate-900/20">
+                  {currentIdx + 1}
+                </div>
+                <span className="text-xs font-bold text-slate-400">/ {questions.length}</span>
+              </div>
+              
+              <div className="w-48 h-1.5 bg-slate-200 rounded-full flex items-center px-0.5">
+                <div 
+                  className="h-full bg-cyan-500 shadow-sm transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Progress & Nav Bar */}
-      <div className="px-8 max-w-7xl mx-auto w-full mb-8">
+            {/* Scrollable Questions & Options Area */}
+            <div className="flex-1 overflow-y-auto pr-4 pb-4 -mr-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {/* Question Text Area */}
+              <div className="relative mb-8 pl-8 group">
+                {/* Modern Accent Line */}
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-700 rounded-full shadow-sm"></div>
+                
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 leading-[1.3] tracking-tight">
+                  {currentQuestion?.question_text}
+                </h3>
+              </div>
 
-        <div className="bg-white border border-slate-200 p-4 flex items-center justify-between rounded-[2rem] shadow-sm">
-          <div className="flex items-center gap-6">
-            <button 
-              onClick={() => setIsMapOpen(true)}
-              className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-primary-600 transition-all shadow-lg shadow-slate-900/10"
-            >
-              <Layout className="w-4 h-4" /> View All Questions
-            </button>
-            <div className="h-4 w-[1px] bg-slate-200" />
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-              Question <span className="text-slate-900 font-black">{currentIdx + 1}</span> <span className="text-slate-300 mx-1">/</span> {questions.length}
-            </span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-4 flex-1 max-w-xs ml-auto">
-            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-               <motion.div 
-                 initial={{ width: 0 }}
-                 animate={{ width: `${progressPercent}%` }}
-                 className="h-full bg-primary-500"
-               />
+            {/* Options */}
+            <div className="space-y-3 max-w-3xl ml-6">
+              {currentQuestion?.options.map((option, idx) => {
+                const isSelected = answers[currentIdx] === idx;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleAnswer(idx)}
+                    className={`
+                      w-full text-left p-3 md:p-4 rounded-2xl border transition-all duration-500 flex items-center gap-5 group relative overflow-hidden
+                      ${isSelected 
+                        ? 'border-cyan-500/30 bg-cyan-50/60 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,242,255,0.1)] scale-[1.02]' 
+                        : 'border-white/60 bg-white/40 backdrop-blur-sm hover:bg-white/70 hover:border-white/90 hover:shadow-[0_10px_30px_rgba(0,0,0,0.03)] hover:scale-[1.01] active:scale-[0.99]'}
+                    `}
+                  >
+                    {/* Background Shine Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    <div className={`
+                      w-10 h-10 rounded border flex items-center justify-center text-sm font-black transition-all duration-300 flex-shrink-0
+                      ${isSelected ? 'bg-slate-900 border-slate-800 text-white shadow-md shadow-slate-900/20' : 'border-white/80 text-slate-400 bg-white/80 group-hover:border-slate-300'}
+                    `}>
+                      {String.fromCharCode(65 + idx)}
+                    </div>
+                    <span className={`text-base font-medium transition-colors duration-300 ${isSelected ? 'text-slate-900 font-semibold' : 'text-slate-600'}`}>
+                      {option}
+                    </span>
+                  </button>
+                );
+              })}
+              </div>
             </div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{Math.round(progressPercent)}% Clear</span>
-          </div>
-        </div>
-      </div>
 
-      {/* Main Question Surface */}
-      <main className="flex-1 px-8 max-w-7xl mx-auto w-full pb-32">
-        <AnimatePresence mode="wait">
-          <motion.div 
-            key={currentIdx}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <h3 className="text-3xl md:text-5xl font-outfit font-bold text-slate-900 leading-[1.2] tracking-tight">
-              {currentQuestion?.question_text}
-            </h3>
-
-            <div className="grid gap-4">
-              {currentQuestion?.options.map((option, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleAnswer(idx)}
+            {/* Bottom Navigation */}
+            <div className="flex items-center justify-between ml-6 pt-6 mt-4 flex-shrink-0 border-t border-slate-100/80">
+              <div className="flex items-center gap-4">
+                <button 
+                  disabled={currentIdx === 0}
+                  onClick={() => setCurrentIdx(prev => prev - 1)}
+                  className="h-12 px-6 flex items-center gap-2 text-slate-500 hover:text-slate-900 font-black text-[10px] uppercase tracking-widest disabled:opacity-20 transition-all hover:bg-slate-50 rounded-full border border-transparent hover:border-slate-200 active:scale-95"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Prev
+                </button>
+                
+                <button 
+                  onClick={toggleReview}
                   className={`
-                    w-full text-left p-6 md:p-8 rounded-[2rem] border-2 transition-all duration-300 flex items-center gap-6 group relative overflow-hidden
-                    ${answers[currentIdx] === idx 
-                      ? 'border-primary-500 bg-primary-50/50 shadow-lg shadow-primary-500/5' 
-                      : 'border-slate-100 bg-white hover:border-slate-300 hover:shadow-md'}
+                    h-12 px-6 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest transition-all rounded-full border
+                    ${reviewed[currentIdx] 
+                      ? 'bg-indigo-50 border-indigo-200 text-indigo-600 shadow-[0_10px_20px_rgba(99,102,241,0.1)]' 
+                      : 'bg-white border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-300'}
+                    active:scale-95
                   `}
                 >
-                  <div className={`
-                    w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-black transition-all duration-300
-                    ${answers[currentIdx] === idx ? 'bg-primary-500 border-primary-500 text-white' : 'border-slate-200 text-slate-300 group-hover:border-slate-400'}
-                  `}>
-                    {String.fromCharCode(65 + idx)}
-                  </div>
-                  <span className={`text-xl font-semibold transition-colors duration-300 ${answers[currentIdx] === idx ? 'text-slate-900' : 'text-slate-500'}`}>
-                    {option}
-                  </span>
-                  
-                  {answers[currentIdx] === idx && (
-                    <div className="ml-auto w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white">
-                      <CheckCircle className="w-4 h-4" />
-                    </div>
-                  )}
+                  <Bookmark className={`w-4 h-4 ${reviewed[currentIdx] ? 'fill-current' : ''}`} /> 
+                  {reviewed[currentIdx] ? 'Marked for Review' : 'Mark for Review'}
                 </button>
-              ))}
+              </div>
+
+              <button 
+                onClick={() => {
+                  if (currentIdx < questions.length - 1) setCurrentIdx(prev => prev + 1);
+                  else showAlert('All questions attempted. Review your answers or submit.', 'info');
+                }}
+                className="h-12 px-10 bg-slate-900 text-white rounded-full font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-slate-800 transition-all shadow-[0_15px_30px_rgba(15,23,42,0.2)] active:scale-95 group"
+              >
+                Next <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
             </div>
-          </motion.div>
-        </AnimatePresence>
-      </main>
-
-      {/* Bottom Floating Navigation - Glassy */}
-      <footer className="fixed bottom-0 left-0 right-0 p-6 z-50 pointer-events-none">
-        <div className="max-w-7xl mx-auto flex justify-between items-center pointer-events-auto">
-          <button 
-            disabled={currentIdx === 0}
-            onClick={() => setCurrentIdx(prev => prev - 1)}
-            className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-black uppercase tracking-widest text-[10px] bg-white shadow-lg px-6 py-3 rounded-2xl border border-slate-100 disabled:opacity-30 transition-all"
-          >
-            <ChevronLeft className="w-5 h-5" /> Previous
-          </button>
-
-          <button 
-            onClick={() => {
-              if (currentIdx < questions.length - 1) setCurrentIdx(prev => prev + 1);
-              else showAlert('All questions attempted. Review your answers or submit.', 'info');
-            }}
-            className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-2xl shadow-blue-600/30"
-          >
-            Save & Next <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </footer>
-
-      {/* Right Question Map Drawer */}
-      <AnimatePresence>
-        {isMapOpen && (
-          <div className="fixed inset-0 z-[200]">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsMapOpen(false)}
-              className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-              className="absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl flex flex-col"
-            >
-              <div className="p-8 flex items-center justify-between border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                   <Layout className="w-6 h-6 text-primary-500" />
-                   <h3 className="text-xl font-black text-slate-900 tracking-tight">QUESTION MAP</h3>
-                </div>
-                <button onClick={() => setIsMapOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-all">
-                  <X className="w-6 h-6 text-slate-400" />
-                </button>
-              </div>
-
-              <div className="p-8 flex-1 overflow-y-auto">
-                <div className="grid grid-cols-5 gap-3">
-                  {questions.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        setCurrentIdx(idx);
-                        setIsMapOpen(false);
-                      }}
-                      className={`
-                        aspect-square rounded-xl font-black text-sm flex items-center justify-center transition-all
-                        ${currentIdx === idx ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20 scale-110' : ''}
-                        ${currentIdx !== idx && answers[idx] !== undefined ? 'bg-primary-500/10 text-primary-600' : ''}
-                        ${currentIdx !== idx && answers[idx] === undefined ? 'bg-slate-100 text-slate-400 hover:bg-slate-200' : ''}
-                      `}
-                    >
-                      {idx + 1}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-8 border-t border-slate-100 flex flex-col gap-4">
-                 <div className="flex items-center gap-3">
-                   <div className="w-4 h-4 rounded bg-primary-500/10 border border-primary-500/20" />
-                   <span className="text-xs font-bold text-slate-500">Answered</span>
-                   <span className="ml-auto text-sm font-black text-slate-900">{Object.keys(answers).length}</span>
-                 </div>
-                 <div className="flex items-center gap-3">
-                   <div className="w-4 h-4 rounded bg-slate-100" />
-                   <span className="text-xs font-bold text-slate-500">Unanswered</span>
-                   <span className="ml-auto text-sm font-black text-slate-900">{questions.length - Object.keys(answers).length}</span>
-                 </div>
-              </div>
-            </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </main>
+
+        {/* Right Sidebar - Map */}
+        <aside className="w-[340px] bg-white/40 backdrop-blur-3xl border-l border-white/60 flex flex-col p-6 lg:p-8 shadow-[-10px_0_30px_rgba(0,0,0,0.03)] flex-shrink-0 z-10">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="flex flex-col gap-1 items-center justify-center w-5 h-5 cursor-pointer">
+              <span className="w-4 h-[2px] bg-slate-400 rounded-full"></span>
+              <span className="w-4 h-[2px] bg-slate-400 rounded-full"></span>
+              <span className="w-4 h-[2px] bg-slate-400 rounded-full"></span>
+            </div>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Map</h3>
+          </div>
+
+          <div className="grid grid-cols-5 gap-3 mb-auto overflow-y-auto pr-2 pb-4">
+            {questions.map((_, idx) => {
+              const isCurrent = currentIdx === idx;
+              const isAnswered = answers[idx] !== undefined;
+              const isReviewed = reviewed[idx];
+              
+              let shapeClass = "transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center font-bold text-xs";
+              let style = {};
+              
+              if (isCurrent) {
+                shapeClass += " bg-slate-900 text-white shadow-md shadow-slate-900/20 z-10";
+                style = { 
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                };
+              } else if (isReviewed) {
+                shapeClass += " bg-indigo-500 text-white rounded-full shadow-sm";
+              } else if (isAnswered) {
+                shapeClass += " bg-emerald-500 text-white shadow-sm";
+                style = { 
+                  clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)',
+                };
+              } else if (idx < currentIdx) {
+                shapeClass += " bg-amber-500 text-white shadow-sm"; // Skipped
+                style = { 
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                };
+              } else {
+                shapeClass += " bg-slate-50 border border-slate-200 text-slate-400 hover:border-slate-300 hover:bg-white";
+                style = { 
+                  borderRadius: '6px',
+                };
+              }
+
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentIdx(idx)}
+                  className={`aspect-square ${shapeClass}`}
+                  style={style}
+                >
+                  {idx + 1}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="space-y-4 pt-6 border-t border-slate-100 mt-4">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <div className="flex items-center gap-3">
+                <div className="w-3.5 h-3.5 rounded border border-slate-200 bg-slate-50"></div>
+                <span>Not Visited</span>
+              </div>
+              <span className="text-slate-900 font-bold">{questions.length - currentIdx - 1 > 0 ? questions.length - currentIdx - 1 : 0}</span>
+            </div>
+            
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-amber-500" style={{ 
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
+                }}></div>
+                <span>Not Answered</span>
+              </div>
+              <span className="text-slate-900 font-bold">
+                {questions.filter((_, i) => i < currentIdx && answers[i] === undefined).length}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-emerald-500" style={{ 
+                  clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'
+                }}></div>
+                <span>Answered</span>
+              </div>
+              <span className="text-slate-900 font-bold">{Object.keys(answers).length}</span>
+            </div>
+
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-indigo-500"></div>
+                <span>Reviewed</span>
+              </div>
+              <span className="text-slate-900 font-bold">{Object.keys(reviewed).filter(k => reviewed[k]).length}</span>
+            </div>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 };

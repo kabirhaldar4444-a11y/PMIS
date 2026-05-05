@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Search, Shield, Eye, Edit2, Trash2, Lock, Unlock, X, 
   Loader2, Mail, User, Key, CheckCircle, FileText, Download, UploadCloud, MapPin, Phone,
-  RotateCw, ArrowLeft, Send
+  RotateCw, ArrowLeft, Send, ShieldAlert
 } from 'lucide-react';
 import { useAlert } from '../../context/AlertProvider';
 import { useAuth } from '../../context/AuthContext';
@@ -677,6 +677,8 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
   const [loadingSubs, setLoadingSubs] = useState(false);
   const [submissionChanges, setSubmissionChanges] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [examSearch, setExamSearch] = useState('');
+  const [isExamDropdownOpen, setIsExamDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -831,30 +833,218 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                 </div>
               </div>
 
-              {/* Allotted Exams */}
+              {/* Allotted Exams - Smart Search Dropdown */}
               <div>
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><FileText className="w-5 h-5" /></div>
-                  <h3 className="text-2xl font-black text-slate-800">Allotted Examinations</h3>
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><FileText className="w-5 h-5" /></div>
+                    <h3 className="text-2xl font-black text-slate-800">Exam Permissions</h3>
+                  </div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    {formData.allotted_exam_ids.length} EXAMS ASSIGNED
+                  </div>
                 </div>
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-                   {exams.map(exam => (
-                      <button 
-                        key={exam.id}
-                        onClick={() => toggleExam(exam.id)}
-                        className={`p-5 rounded-2xl flex items-center gap-4 transition-all ${
-                          formData.allotted_exam_ids.includes(exam.id) 
-                            ? 'bg-blue-50/50 border-2 border-blue-500 shadow-sm' 
-                            : 'bg-slate-50/50 border-2 border-transparent hover:border-blue-200 text-slate-600 shadow-sm'
-                        }`}
-                      >
-                        <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 border ${formData.allotted_exam_ids.includes(exam.id) ? 'border-blue-500 bg-white' : 'border-slate-300 bg-white'}`}>
-                          {formData.allotted_exam_ids.includes(exam.id) && <div className="w-4 h-4 bg-blue-500 rounded-sm" />}
+
+                <div className="space-y-6 relative">
+                   {/* Search Bar - Advanced Tag Input */}
+                   <div className="flex items-center gap-3">
+                     <div className="flex-1 relative group">
+                       <div className="absolute inset-0 bg-blue-500/5 rounded-[24px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                       <div className={`
+                         relative flex flex-wrap items-center gap-2 min-h-[64px] px-5 py-3 bg-slate-50/50 border-2 border-slate-100 rounded-[24px] transition-all 
+                         ${isExamDropdownOpen ? 'border-blue-400 bg-white shadow-lg ring-4 ring-blue-500/5' : 'hover:border-slate-200'}
+                       `}>
+                         <Search className="w-5 h-5 text-slate-400 shrink-0" />
+                         
+                         {/* Tags inside search bar */}
+                         <AnimatePresence>
+                           {formData.allotted_exam_ids.map(examId => {
+                             const exam = exams.find(e => e.id === examId);
+                             if (!exam) return null;
+                             return (
+                               <motion.div 
+                                 key={examId}
+                                 initial={{ opacity: 0, scale: 0.8 }}
+                                 animate={{ opacity: 1, scale: 1 }}
+                                 exit={{ opacity: 0, scale: 0.8 }}
+                                 className="bg-blue-600 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-md shadow-blue-600/20"
+                               >
+                                 <span className="text-[11px] font-black uppercase tracking-wider">{exam.title}</span>
+                                 <button 
+                                   onClick={() => toggleExam(examId)}
+                                   className="hover:bg-white/20 rounded-md p-0.5 transition-colors"
+                                 >
+                                   <X className="w-3 h-3" />
+                                 </button>
+                               </motion.div>
+                             );
+                           })}
+                         </AnimatePresence>
+
+                         <input 
+                           type="text"
+                           placeholder={formData.allotted_exam_ids.length === 0 ? "Search and assign examinations..." : ""}
+                           className="flex-1 min-w-[120px] bg-transparent text-[15px] font-bold text-slate-800 focus:outline-none placeholder:font-medium placeholder:text-slate-400"
+                           value={examSearch}
+                           onChange={(e) => {
+                             setExamSearch(e.target.value);
+                             setIsExamDropdownOpen(true);
+                           }}
+                           onFocus={() => setIsExamDropdownOpen(true)}
+                         />
+                         
+                         {examSearch && (
+                           <button 
+                             onClick={() => setExamSearch('')}
+                             className="p-1 hover:bg-slate-100 rounded-full transition-colors shrink-0"
+                           >
+                             <X className="w-4 h-4 text-slate-400" />
+                           </button>
+                         )}
+                       </div>
+
+                       {/* Dropdown Results */}
+                       <AnimatePresence>
+                         {isExamDropdownOpen && (
+                           <>
+                             <div className="fixed inset-0 z-[10]" onClick={() => setIsExamDropdownOpen(false)} />
+                             <motion.div 
+                               initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                               animate={{ opacity: 1, y: 0, scale: 1 }}
+                               exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                               className="absolute left-0 right-0 top-full mt-3 bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden z-[100] max-h-[320px] flex flex-col"
+                             >
+                               <div className="p-4 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
+                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Available Exams</span>
+                                 <button onClick={() => setIsExamDropdownOpen(false)} className="text-[10px] font-black text-blue-600 uppercase hover:underline">Close</button>
+                               </div>
+                             <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+                                {exams
+                                  .filter(ex => ex.title.toLowerCase().includes(examSearch.toLowerCase()))
+                                  .map(exam => {
+                                    const isSelected = formData.allotted_exam_ids.includes(exam.id);
+                                    return (
+                                      <div 
+                                        key={exam.id}
+                                        className={`w-full p-3 rounded-2xl flex items-center justify-between group/item transition-all ${isSelected ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
+                                      >
+                                        <div className="flex items-center gap-4">
+                                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isSelected ? 'bg-white shadow-sm border border-blue-100' : 'bg-slate-100 group-hover/item:bg-white border border-transparent'}`}>
+                                            <FileText className={`w-5 h-5 ${isSelected ? 'text-blue-500' : 'text-slate-400'}`} />
+                                          </div>
+                                          <div className="text-left">
+                                            <div className="font-bold text-[14px] text-slate-800 leading-tight truncate max-w-[180px]">{exam.title}</div>
+                                            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-0.5">{exam.duration} Minutes</div>
+                                          </div>
+                                        </div>
+                                        
+                                        {isSelected ? (
+                                          <button 
+                                            onClick={() => toggleExam(exam.id)}
+                                            className="px-4 py-2 bg-white text-rose-500 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-2"
+                                          >
+                                            <X className="w-3 h-3" /> Remove
+                                          </button>
+                                        ) : (
+                                          <button 
+                                            onClick={() => toggleExam(exam.id)}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2"
+                                          >
+                                            <Plus className="w-3 h-3" /> Assign
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                {exams.filter(ex => ex.title.toLowerCase().includes(examSearch.toLowerCase())).length === 0 && (
+                                  <div className="p-10 text-center">
+                                    <Search className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                                    <span className="text-sm font-bold text-slate-400">No exams matching "{examSearch}"</span>
+                                  </div>
+                                )}
+                             </div>
+                           </motion.div>
+                         </>
+                       )}
+                     </AnimatePresence>
+                   </div>
+                   
+                   {/* OK Final Check Button */}
+                   <button 
+                     onClick={() => {
+                        setIsExamDropdownOpen(false);
+                        setExamSearch('');
+                     }}
+                     className="h-[64px] px-8 bg-emerald-500 text-white rounded-[24px] font-black text-[12px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2"
+                   >
+                     <CheckCircle className="w-5 h-5" /> OK
+                   </button>
+                   </div>
+
+                   {/* Selected Exams Permission List - COMPACT VERSION */}
+                   <div className="space-y-2">
+                      <div className="px-4 py-1.5 border-b border-slate-100 flex justify-between items-center">
+                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Current Allotments</span>
+                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Attempt Status</span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-2">
+                        <AnimatePresence>
+                          {formData.allotted_exam_ids.map(examId => {
+                            const exam = exams.find(e => e.id === examId);
+                            if (!exam) return null;
+                            
+                            const attempt = submissions.find(s => s.exam_id === examId);
+                            const isAttempted = !!attempt;
+
+                            return (
+                              <motion.div 
+                                key={examId}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 10 }}
+                                className="bg-white border border-slate-100 px-4 py-3 rounded-xl flex items-center justify-between group hover:shadow-sm transition-all"
+                              >
+                                <div className="flex items-center gap-3">
+                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${isAttempted ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                                      <Shield className="w-4 h-4" />
+                                   </div>
+                                   <div>
+                                      <h5 className="font-bold text-slate-800 text-[13px] leading-tight">{exam.title}</h5>
+                                      <div className="flex items-center gap-2 mt-0.5">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Auth Access</p>
+                                        <div className="w-1 h-1 bg-slate-300 rounded-full" />
+                                        <span className={`text-[9px] font-black uppercase tracking-widest ${isAttempted ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                          {isAttempted ? 'Attempted' : 'Not Attempted'}
+                                        </span>
+                                      </div>
+                                   </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  {isAttempted && (
+                                    <div className="px-2.5 py-1 bg-emerald-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-md shadow-sm">
+                                      {attempt.score} / {attempt.total_questions}
+                                    </div>
+                                  )}
+                                  <button 
+                                    onClick={() => toggleExam(examId)}
+                                    className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all border border-transparent hover:border-rose-100"
+                                    title="Revoke Permission"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
+                      </div>
+                      {formData.allotted_exam_ids.length === 0 && (
+                        <div className="w-full p-10 bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center gap-3">
+                           <Shield className="w-6 h-6 text-slate-200" />
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Active Allotments</span>
                         </div>
-                        <span className={`font-bold text-left truncate text-[15px] ${formData.allotted_exam_ids.includes(exam.id) ? 'text-blue-900' : 'text-slate-600'}`}>{exam.title}</span>
-                      </button>
-                    ))}
-                    {exams.length === 0 && <div className="text-sm text-slate-400 col-span-3">No exams available in the system.</div>}
+                      )}
+                   </div>
                 </div>
               </div>
 
@@ -1028,6 +1218,9 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
 
+  const { profile } = useAuth();
+  const isSuperAdmin = profile?.email === 'admin@pmi.com';
+
   useEffect(() => {
     if (user) {
       document.body.style.overflow = 'hidden';
@@ -1037,6 +1230,25 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
     }
     return () => { document.body.style.overflow = 'auto'; }
   }, [user]);
+
+  // Privacy Masking Helpers
+  const maskPhone = (phone) => {
+    if (!phone) return '+91 - Not Provided';
+    if (isSuperAdmin) return phone;
+    return phone.replace(/(\d{4})\d{4}(\d{2})/, '$1XXXX$2');
+  };
+
+  const maskAddress = (address) => {
+    if (!address) return 'Location Not Provided';
+    if (isSuperAdmin) return address;
+    return 'Privacy Protected';
+  };
+
+  const maskIP = (ip) => {
+    if (!ip || ip === 'Capture Disabled') return ip || 'Capture Disabled';
+    if (isSuperAdmin) return ip;
+    return ip.replace(/\d+\.\d+$/, 'XXX.XXX');
+  };
 
   const fetchSubmissions = async () => {
     setLoadingSubs(true);
@@ -1101,10 +1313,10 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
                         <Mail className="w-4 h-4" /> {user.email}
                       </div>
                       <div className="flex items-center gap-3 text-slate-600 font-medium">
-                        <Phone className="w-4 h-4" /> {user.phone || '+91 - Not Provided'}
+                        <Phone className="w-4 h-4" /> {maskPhone(user.phone)}
                       </div>
                       <div className="flex items-center gap-3 text-slate-600 font-medium">
-                        <MapPin className="w-4 h-4" /> {user.address || 'Location Not Provided'}
+                        <MapPin className="w-4 h-4" /> {maskAddress(user.address)}
                       </div>
                     </div>
                 </div>
@@ -1117,7 +1329,7 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
                     <div className="space-y-6">
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Registration IP</p>
-                        <p className="text-slate-800 font-mono font-bold text-sm bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 inline-block">{user.ip_address || 'Capture Disabled'}</p>
+                        <p className="text-slate-800 font-mono font-bold text-sm bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 inline-block">{maskIP(user.ip_address)}</p>
                       </div>
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">KYC Status</p>
@@ -1137,12 +1349,12 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
                   <h3 className="text-2xl font-black text-slate-800">Documents</h3>
                 </div>
                 
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <DocumentWidget label="Live Photo" url={user.profile_photo_url} onView={() => onViewDoc({ label: "Live Photo", url: user.profile_photo_url })} />
-                    <DocumentWidget label="Aadhar Front" url={user.aadhaar_front_url} onView={() => onViewDoc({ label: "Aadhar Front", url: user.aadhaar_front_url })} />
-                    <DocumentWidget label="Aadhar Back" url={user.aadhaar_back_url} onView={() => onViewDoc({ label: "Aadhar Back", url: user.aadhaar_back_url })} />
-                    <DocumentWidget label="PAN Card" url={user.pan_card_url} onView={() => onViewDoc({ label: "PAN Card", url: user.pan_card_url })} />
-                    <DocumentWidget label="Signature" url={user.signature_url} onView={() => onViewDoc({ label: "Signature Scan", url: user.signature_url })} />
+                    <DocumentWidget label="Aadhar Front" url={user.aadhaar_front_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Aadhar Front", url: user.aadhaar_front_url })} />
+                    <DocumentWidget label="Aadhar Back" url={user.aadhaar_back_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Aadhar Back", url: user.aadhaar_back_url })} />
+                    <DocumentWidget label="PAN Card" url={user.pan_card_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "PAN Card", url: user.pan_card_url })} />
+                    <DocumentWidget label="Signature" url={user.signature_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Signature Scan", url: user.signature_url })} />
                 </div>
               </div>
 
@@ -1217,24 +1429,56 @@ const DocumentViewerOverlay = ({ doc, onClose }) => {
   );
 };
 
-const DocumentWidget = ({ label, url, onView }) => (
-  <div className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center gap-4 group hover:shadow-md transition-shadow cursor-default">
-    <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-200 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-       {url ? <FileText className="w-5 h-5" /> : <X className="w-5 h-5 text-slate-300" />}
-    </div>
-    <div className="flex-1 min-w-0">
-      <h5 className="font-bold text-slate-800 text-sm truncate">{label}</h5>
-      <p className="text-xs text-slate-400 truncate">{url ? 'Document uploaded' : 'none'}</p>
-    </div>
-    {url ? (
-      <button onClick={onView} className="p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors font-bold text-xs shrink-0 flex items-center gap-1 group/btn">
-         <Eye className="w-3.5 h-3.5" /> View
-      </button>
-    ) : (
-      <div className="px-3 py-1 bg-rose-50 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-full shrink-0">
-        MISSING
+const DocumentWidget = ({ label, url, onView, restricted }) => (
+  <div className={`group relative bg-white p-5 rounded-3xl border transition-all duration-300 ${restricted ? 'border-slate-100' : 'border-slate-100 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/5'}`}>
+    <div className="flex flex-col gap-4">
+      {/* Header Row */}
+      <div className="flex items-center justify-between">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 ${
+          restricted 
+            ? 'bg-amber-50 border-amber-100/50 text-amber-500' 
+            : url 
+              ? 'bg-blue-50 border-blue-100/50 text-blue-600' 
+              : 'bg-slate-50 border-slate-100 text-slate-300'
+        }`}>
+           {restricted ? <ShieldAlert className="w-5 h-5" /> : (url ? <FileText className="w-5 h-5" /> : <X className="w-5 h-5" />)}
+        </div>
+        
+        {restricted ? (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50/50 text-amber-600 text-[8px] font-black uppercase tracking-[0.15em] rounded-lg border border-amber-100/50">
+            <Lock className="w-2.5 h-2.5" /> Restricted
+          </div>
+        ) : url ? (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50/50 text-emerald-600 text-[8px] font-black uppercase tracking-[0.15em] rounded-lg border border-emerald-100/50">
+            <CheckCircle className="w-2.5 h-2.5" /> Verified
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-50/50 text-rose-500 text-[8px] font-black uppercase tracking-[0.15em] rounded-lg border border-rose-100/50">
+            <X className="w-2.5 h-2.5" /> Missing
+          </div>
+        )}
       </div>
-    )}
+
+      {/* Text Content */}
+      <div className="min-h-[40px]">
+        <h5 className="font-black text-slate-800 text-[14px] leading-tight mb-1">{label}</h5>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+          {restricted ? 'Hidden for Privacy' : (url ? 'Uploaded' : 'No Data')}
+        </p>
+      </div>
+
+      {/* Button only for non-restricted uploaded docs - SMALL VERSION */}
+      {!restricted && url && (
+        <div className="pt-2">
+          <button 
+            onClick={onView} 
+            className="px-5 py-2 bg-slate-900 hover:bg-blue-600 text-white rounded-lg transition-all font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10 hover:shadow-blue-500/20 active:scale-[0.98]"
+          >
+            <Eye className="w-3 h-3" /> View Document
+          </button>
+        </div>
+      )}
+    </div>
   </div>
 );
 
