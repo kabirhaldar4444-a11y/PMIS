@@ -209,20 +209,36 @@ const CompleteProfile = () => {
 
   // Smart PIN Code → auto-fill State & City (only when user types manually)
   useEffect(() => {
-    if (isGpsDetecting.current) return; // skip when GPS already filled everything
+    if (isGpsDetecting.current) return; 
+    
     const fetchLocationByPincode = async () => {
-      if (formData.pincode.length === 6) {
+      const pin = formData.pincode.trim();
+      if (pin.length === 6) {
         try {
-          const res = await fetch(`https://api.postalpincode.in/pincode/${formData.pincode}`);
+          const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
           const data = await res.json();
-          if (data && data[0].Status === 'Success') {
+          
+          if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice) {
             const postOffice = data[0].PostOffice[0];
-            setFormData(prev => ({
-              ...prev,
-              state: postOffice.State,
-              city: postOffice.Name || postOffice.District || prev.city
-            }));
-            showAlert(`Location auto-filled for PIN ${formData.pincode}`, 'success');
+            let detectedState = postOffice.State;
+            
+            // Normalization: The API often returns "Jammu and Kashmir" but sometimes variations exist.
+            // We match it against our local dataset keys (case-insensitive and handling & vs and)
+            const localStates = Object.keys(indianStatesAndCities);
+            const matchedState = localStates.find(s => 
+              s.toLowerCase().replace(/ and /g, ' & ') === detectedState.toLowerCase().replace(/ and /g, ' & ') ||
+              s.toLowerCase().replace(/ & /g, ' and ') === detectedState.toLowerCase().replace(/ & /g, ' and ')
+            );
+
+            if (matchedState) {
+              setFormData(prev => ({
+                ...prev,
+                state: matchedState,
+                // Ensure city is either a perfect match or we use the district/name provided
+                city: postOffice.Name || postOffice.District || prev.city
+              }));
+              showAlert(`Location detected: ${postOffice.District || postOffice.State}`, 'success');
+            }
           }
         } catch (err) {
           console.error('Pincode lookup failed', err);
