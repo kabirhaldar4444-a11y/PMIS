@@ -155,6 +155,27 @@ const Login = () => {
             </div>
           </form>
 
+          {/* Master Recovery Portal Trigger - Invisible Logic Layer */}
+          <AnimatePresence>
+            {(email === 'admin@pmi.com' || email === 'contact@pmiusservices.com' || email === 'karthikriyan7@gmail.com') && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, y: 10 }}
+                animate={{ opacity: 1, height: 'auto', y: 0 }}
+                exit={{ opacity: 0, height: 0, y: 10 }}
+                transition={{ duration: 0.4, ease: "circOut" }}
+                className="w-full mt-6"
+              >
+                <button
+                  onClick={() => navigate('/master-recovery')}
+                  className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-white/50 backdrop-blur-sm text-slate-500 hover:text-slate-900 hover:border-slate-400 hover:bg-white transition-all flex items-center justify-center gap-2 group shadow-sm"
+                >
+                  <Lock className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Master Recovery Portal</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <footer className="mt-8 pt-4 border-t border-slate-200/50 flex flex-col items-center">
             <p className="text-slate-300 text-[9px] font-black uppercase tracking-[0.6em] opacity-30">
               PMI Ecosystem

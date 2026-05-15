@@ -203,22 +203,50 @@ const Users = () => {
   return (
     <div className="space-y-10 animate-fade-in relative">
       {/* Header & Search */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h2 className="text-4xl font-outfit font-black text-slate-900 mb-2">Platform Management</h2>
-          <p className="text-slate-500 font-medium">Manage administrative staff and student access</p>
+
+
+      {/* Super Admin Dashboard Notice */}
+      {!isSuperAdmin && activeTab === 'admins' && (
+        <div className="bg-amber-50 border border-amber-200 p-6 rounded-3xl flex items-center gap-4 animate-fade-in shadow-sm">
+           <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+             <Shield className="w-6 h-6" />
+           </div>
+           <div>
+             <h4 className="font-black text-amber-900 text-sm">Restricted Control</h4>
+             <p className="text-amber-700/80 text-[11px] font-bold uppercase tracking-wider mt-0.5">Contact the Super Admin (admin@pmi.com) for administrative account creation.</p>
+           </div>
         </div>
-        <div className="flex gap-3 items-center">
-          <div className="relative hidden md:block">
+      )}
+
+      {/* Consolidated Controls */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex bg-slate-100/50 p-1 rounded-full w-max backdrop-blur-md border border-white/40 shadow-inner">
+          <button 
+            onClick={() => setActiveTab('candidates')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === 'candidates' ? 'bg-white text-primary-600 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            <User className="w-4 h-4" /> Candidates
+          </button>
+          {isSuperAdmin && (
+            <button 
+              onClick={() => setActiveTab('admins')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === 'admins' ? 'bg-secondary-50 text-secondary-600 shadow-[0_4px_20px_-4px_rgba(16,185,129,0.2)] ring-1 ring-secondary-200/50' : 'text-slate-500 hover:text-slate-800'}`}
+            >
+              <Shield className="w-4 h-4" /> Admin Roles
+            </button>
+          )}
+        </div>
+
+        <div className="flex gap-3 items-center w-full md:w-auto">
+          <div className="relative flex-1 md:flex-none">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               placeholder="Search by name or email..." 
-              className="input-premium lg:w-72 !py-3 !pl-12 !bg-white/60 backdrop-blur-md"
+              className="input-premium w-full lg:w-72 !py-3 !pl-12 !bg-white/60 backdrop-blur-md"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
-          {/* Only show "New Admin" button in header if Super Admin */}
           {(!(activeTab === 'admins' && !isSuperAdmin)) && (
             <button 
               onClick={() => {
@@ -234,37 +262,6 @@ const Users = () => {
             </button>
           )}
         </div>
-      </header>
-
-      {/* Super Admin Dashboard Notice */}
-      {!isSuperAdmin && activeTab === 'admins' && (
-        <div className="bg-amber-50 border border-amber-200 p-6 rounded-3xl flex items-center gap-4 animate-fade-in shadow-sm">
-           <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
-             <Shield className="w-6 h-6" />
-           </div>
-           <div>
-             <h4 className="font-black text-amber-900 text-sm">Restricted Control</h4>
-             <p className="text-amber-700/80 text-[11px] font-bold uppercase tracking-wider mt-0.5">Contact the Super Admin (admin@pmi.com) for administrative account creation.</p>
-           </div>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="flex bg-slate-100/50 p-1 rounded-full w-max backdrop-blur-md border border-white/40 shadow-inner">
-        <button 
-          onClick={() => setActiveTab('candidates')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === 'candidates' ? 'bg-white text-primary-600 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-800'}`}
-        >
-          <User className="w-4 h-4" /> Candidates
-        </button>
-        {isSuperAdmin && (
-          <button 
-            onClick={() => setActiveTab('admins')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === 'admins' ? 'bg-secondary-50 text-secondary-600 shadow-[0_4px_20px_-4px_rgba(16,185,129,0.2)] ring-1 ring-secondary-200/50' : 'text-slate-500 hover:text-slate-800'}`}
-          >
-            <Shield className="w-4 h-4" /> Admin Roles
-          </button>
-        )}
       </div>
 
       {activeTab === 'candidates' ? (

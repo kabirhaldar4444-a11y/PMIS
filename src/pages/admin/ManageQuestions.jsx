@@ -38,6 +38,7 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
 
   // New Exam Local State
   const [newExamTitle, setNewExamTitle] = useState('');
@@ -58,6 +59,9 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
   const [parsedData, setParsedData] = useState(null);
   const [shuffleQuestions, setShuffleQuestions] = useState(false);
   const [shuffleOptions, setShuffleOptions] = useState(false);
+  const [editingExam, setEditingExam] = useState(null);
+  const [editExamTitle, setEditExamTitle] = useState('');
+  const [editExamDuration, setEditExamDuration] = useState('');
 
   useEffect(() => {
     fetchExams();
@@ -120,10 +124,40 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
     });
   };
 
+  const handleEditExam = (exam) => {
+    setEditingExam(exam);
+    setEditExamTitle(exam.title);
+    setEditExamDuration(exam.duration);
+  };
+
+  const handleUpdateExam = async () => {
+    if (!editExamTitle.trim() || !editExamDuration) {
+       showAlert('Please provide both title and duration.', 'error');
+       return;
+    }
+    setProcessing(true);
+    try {
+      const { error } = await supabase.from('exams').update({
+        title: editExamTitle.trim(),
+        duration: parseInt(editExamDuration)
+      }).eq('id', editingExam.id);
+      
+      if (error) throw error;
+      showAlert('Exam updated successfully.', 'success');
+      setEditingExam(null);
+      fetchExams();
+    } catch (e) {
+      showAlert(e.message, 'error');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleSelectExam = async (exam) => {
     setSelectedExam(exam);
     onSubViewChange?.(true); // Tell parent to hide its header/tabs
     setLoading(true);
+    setSelectedQuestions([]);
     try {
       const { data, error } = await supabase.from('questions').select('*').eq('exam_id', exam.id);
       if (error) throw error;
@@ -170,10 +204,45 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
        const { error } = await supabase.from('questions').delete().eq('id', id);
        if (error) throw error;
        setQuestions(prev => prev.filter(q => q.id !== id));
+       setSelectedQuestions(prev => prev.filter(qId => qId !== id));
        showAlert('Question removed.', 'success');
      } catch (e) {
        showAlert(e.message, 'error');
      }
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedQuestions(questions.map(q => q.id));
+    } else {
+      setSelectedQuestions([]);
+    }
+  };
+
+  const handleSelectQuestion = (id) => {
+    setSelectedQuestions(prev => 
+      prev.includes(id) ? prev.filter(qId => qId !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = () => {
+    confirm({
+      title: 'Delete Selected Questions?',
+      message: `Are you sure you want to delete ${selectedQuestions.length} selected question(s)? This action is permanent.`,
+      type: 'danger',
+      confirmText: 'Delete Questions',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('questions').delete().in('id', selectedQuestions);
+          if (error) throw error;
+          setQuestions(prev => prev.filter(q => !selectedQuestions.includes(q.id)));
+          setSelectedQuestions([]);
+          showAlert('Selected questions removed.', 'success');
+        } catch (e) {
+          showAlert(e.message, 'error');
+        }
+      }
+    });
   };
 
   // --- EXCEL PARSING & DRAG/DROP LOGIC ---
@@ -561,9 +630,40 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
 
             {/* RIGHT COLUMN: Question List */}
             <div className="lg:col-span-7 flex flex-col pt-1">
-               <div className="flex justify-between items-center mb-5 pl-2">
-                  <h3 className="font-black text-slate-800">Existing Questions</h3>
-                  <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold ring-1 ring-indigo-500/20">{questions.length} Added</span>
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 pl-2">
+                  <div className="flex items-center gap-3">
+                     <h3 className="font-black text-slate-800">Existing Questions</h3>
+                     <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold ring-1 ring-indigo-500/20">{questions.length} Added</span>
+                  </div>
+                  
+                  {questions.length > 0 && (
+                     <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-100">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                           <input 
+                              type="checkbox" 
+                              className="w-4 h-4 rounded text-indigo-500 border-slate-300 focus:ring-indigo-500 transition-colors"
+                              checked={questions.length > 0 && selectedQuestions.length === questions.length}
+                              onChange={handleSelectAll}
+                           />
+                           <span className="text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors">
+                              Select All
+                           </span>
+                        </label>
+
+                        {selectedQuestions.length > 0 && (
+                           <>
+                              <div className="w-px h-4 bg-slate-200"></div>
+                              <button 
+                                 onClick={handleBulkDelete}
+                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-bold transition-all group"
+                              >
+                                 <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform"/>
+                                 {selectedQuestions.length === questions.length ? 'Delete All' : `Delete (${selectedQuestions.length})`}
+                              </button>
+                           </>
+                        )}
+                     </div>
+                  )}
                </div>
                
                <div className="bg-slate-50/50 flex-1 rounded-[24px] border border-slate-100 p-6 flex flex-col gap-4 relative">
@@ -582,12 +682,22 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
                      </div>
                   ) : (
                      questions.map((q, idx) => (
-                        <div key={q.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-5 hover:shadow-md transition-shadow relative group">
+                        <div key={q.id} className={`bg-white p-6 rounded-2xl shadow-sm border transition-all relative group flex flex-col gap-5 ${selectedQuestions.includes(q.id) ? 'border-indigo-300 ring-2 ring-indigo-500/20 shadow-md' : 'border-slate-100 hover:shadow-md'}`}>
+                           
+                           <div className="absolute left-4 top-4 z-10">
+                              <input 
+                                 type="checkbox"
+                                 className="w-5 h-5 rounded text-indigo-500 border-slate-300 focus:ring-indigo-500 transition-colors cursor-pointer"
+                                 checked={selectedQuestions.includes(q.id)}
+                                 onChange={() => handleSelectQuestion(q.id)}
+                              />
+                           </div>
+
                            <button onClick={() => handleDeleteQuestion(q.id)} className="absolute right-4 top-4 p-2 text-rose-300 hover:text-white hover:bg-rose-500 bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">
                               <Trash2 className="w-4 h-4" />
                            </button>
                            
-                           <div className="pr-10">
+                           <div className="pr-10 pl-8">
                               <span className="text-[10px] font-black uppercase text-indigo-500 tracking-wider mb-2 block">Question {idx + 1}</span>
                               <h4 className="font-bold text-slate-800 leading-relaxed text-sm">{q.question_text}</h4>
                            </div>
@@ -864,31 +974,141 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
              <p className="text-slate-500 font-bold">No exams created yet.</p>
            </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
              {exams.map(exam => (
-                <div key={exam.id} className="bg-white p-5 rounded-[22px] shadow-[0_4px_30px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col group hover:border-indigo-200 hover:shadow-lg transition-all ring-1 ring-transparent hover:ring-indigo-100/50">
-                   <div className="flex items-center justify-between mb-4">
-                      <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0">
-                         <FileText className="w-5 h-5" />
-                      </div>
-                      <div className="text-slate-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100 shadow-sm">
-                         <Clock className="w-3 h-3 text-indigo-500" /> {exam.duration}m
+                <motion.div 
+                  key={exam.id} 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ y: -8 }}
+                  className="bg-white/80 backdrop-blur-xl p-8 rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-white ring-1 ring-slate-200/50 flex flex-col group hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 relative overflow-hidden"
+                >
+                  {/* Decorative background glow */}
+                  <div className="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors" />
+
+                   <div className="flex items-center justify-between mb-10 relative z-10">
+                      <div className="flex items-center gap-4">
+                         <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/30 shrink-0 group-hover:rotate-6 transition-transform duration-500">
+                            <FileText className="w-8 h-8" />
+                         </div>
+                         <div className="flex flex-col">
+                            <div className="flex items-center gap-1.5 bg-slate-100/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200/50 w-max mb-1">
+                               <Clock className="w-3 h-3 text-indigo-500" />
+                               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{exam.duration}m</span>
+                            </div>
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Limit Duration</span>
+                         </div>
                       </div>
                    </div>
-                   <h4 className="font-black text-[15px] text-slate-900 mb-6 leading-tight group-hover:text-indigo-600 transition-colors break-words">{exam.title}</h4>
-                   <div className="mt-auto flex gap-2">
-                      <button onClick={() => handleSelectExam(exam)} className="flex-1 bg-[#1e58f0] hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-[11px] transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-500/10 active:scale-95">
-                         <Settings className="w-3.5 h-3.5"/> Manage
+
+                   <h4 className="font-outfit font-black text-2xl text-slate-900 mb-10 leading-tight tracking-tight break-words group-hover:text-indigo-600 transition-colors relative z-10">{exam.title}</h4>
+
+                   <div className="h-px bg-gradient-to-r from-transparent via-slate-100 to-transparent w-full mb-8" />
+
+                   <div className="mt-auto grid grid-cols-2 gap-3 relative z-10">
+                      <button 
+                         onClick={() => handleSelectExam(exam)} 
+                         className="col-span-2 relative overflow-hidden text-white font-black py-4 rounded-2xl text-[12px] transition-all flex items-center justify-center gap-2.5 active:scale-95 group/manage"
+                         style={{
+                           background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #a855f7 100%)',
+                           boxShadow: '0 8px 32px rgba(139,92,246,0.4), 0 0 0 1px rgba(255,255,255,0.1) inset'
+                         }}
+                       >
+                          {/* Shimmer sweep on hover */}
+                          <span className="absolute inset-0 translate-x-[-100%] group-hover/manage:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none" />
+                          {/* Subtle top highlight */}
+                          <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none" />
+                          <span className="relative flex items-center gap-2.5">
+                            <span className="relative flex items-center justify-center w-6 h-6 rounded-lg bg-white/15 backdrop-blur-sm ring-1 ring-white/20 group-hover/manage:bg-white/25 transition-colors">
+                              <Settings className="w-3.5 h-3.5 group-hover/manage:rotate-90 transition-transform duration-500"/>
+                            </span>
+                            <span className="tracking-wide text-[12px]">Manage Questions</span>
+                            <span className="ml-0.5 opacity-60 text-[10px] group-hover/manage:opacity-100 transition-opacity">›</span>
+                          </span>
+                       </button>
+                      
+                      <button 
+                        onClick={() => handleEditExam(exam)} 
+                        className="bg-slate-50 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 font-black py-4 rounded-2xl text-[11px] transition-all flex items-center justify-center gap-2 group/edit active:scale-95 border border-slate-100 hover:border-indigo-100"
+                      >
+                         <Edit3 className="w-3.5 h-3.5 group-hover/edit:scale-110 transition-transform"/> Edit
                       </button>
-                      <button onClick={() => handleDeleteExam(exam.id)} className="flex-1 bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white font-bold py-2.5 rounded-xl text-[11px] transition-all flex items-center justify-center gap-2 group/delete active:scale-95">
+                      
+                      <button 
+                        onClick={() => handleDeleteExam(exam.id)} 
+                        className="bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 font-black py-4 rounded-2xl text-[11px] transition-all flex items-center justify-center gap-2 group/delete active:scale-95 border border-slate-100 hover:border-rose-100"
+                      >
                          <Trash2 className="w-3.5 h-3.5 group-hover/delete:scale-110 transition-transform"/> Delete
                       </button>
                    </div>
-                </div>
+                </motion.div>
              ))}
           </div>
         )}
       </div>
+
+      {/* EDIT EXAM MODAL */}
+      <AnimatePresence>
+        {editingExam && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setEditingExam(null)} 
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md shadow-2xl" 
+            />
+            <motion.div 
+              initial={{ scale: 0.9, y: 20, opacity: 0 }} 
+              animate={{ scale: 1, y: 0, opacity: 1 }} 
+              exit={{ scale: 0.9, y: 20, opacity: 0 }} 
+              className="bg-white max-w-lg w-full rounded-[2.5rem] shadow-2xl border border-slate-100 relative z-10 overflow-hidden"
+            >
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                       <Edit3 className="w-6 h-6" />
+                    </div>
+                    <div>
+                       <h3 className="text-xl font-black text-slate-900">Edit Exam</h3>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Update basic details</p>
+                    </div>
+                 </div>
+                 <button onClick={() => setEditingExam(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                    <X className="w-6 h-6 text-slate-400" />
+                 </button>
+              </div>
+
+              <div className="p-10 space-y-6">
+                 <div>
+                    <label className="text-[10px] uppercase font-black text-slate-400 mb-1.5 ml-2 block tracking-widest">Exam Title</label>
+                    <input 
+                      className="input-premium w-full !bg-slate-50 !rounded-2xl" 
+                      value={editExamTitle} 
+                      onChange={e => setEditExamTitle(e.target.value)}
+                    />
+                 </div>
+                 <div>
+                    <label className="text-[10px] uppercase font-black text-slate-400 mb-1.5 ml-2 block tracking-widest">Duration (Minutes)</label>
+                    <input 
+                      type="number" 
+                      className="input-premium w-full !bg-slate-50 !rounded-2xl" 
+                      value={editExamDuration} 
+                      onChange={e => setEditExamDuration(e.target.value)}
+                    />
+                 </div>
+
+                 <div className="flex gap-4 pt-4">
+                    <button onClick={() => setEditingExam(null)} className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all">Cancel</button>
+                    <button onClick={handleUpdateExam} disabled={processing} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-600/20 hover:scale-[1.02] active:scale-95 transition-all">
+                       {processing ? <Loader2 className="w-4 h-4 animate-spin mx-auto"/> : 'Save Changes'}
+                    </button>
+                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

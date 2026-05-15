@@ -67,16 +67,40 @@ const AdminDashboard = () => {
     <div className="pb-10 bg-slate-50/30">
 
 
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50">
-        <div className="glass-navbar rounded-full px-8 py-3 flex items-center justify-between shadow-2xl backdrop-blur-2xl">
+      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl z-50">
+        <div className="bg-white/70 backdrop-blur-2xl rounded-full px-4 sm:px-8 py-2.5 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/50 ring-1 ring-slate-200/20">
           <div className="flex items-center">
             <PMISLogo variant="navbar" />
           </div>
-          <div className="flex items-center gap-1 sm:gap-4">
-            <button onClick={() => setActiveTab('students')} className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'students' ? 'bg-primary-500/10 text-primary-500' : 'text-slate-500 hover:bg-slate-100'}`}>Users</button>
-            <button onClick={() => setActiveTab('exams')} className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'exams' ? 'bg-primary-500/10 text-primary-500' : 'text-slate-500 hover:bg-slate-100'}`}>Exams</button>
-            <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
-            <button onClick={handleLogout} className="bg-primary-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-primary-500/30 hover:scale-[1.03] transition-all">Logout</button>
+          
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button 
+              onClick={() => setActiveTab('exams')} 
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-black transition-all duration-300 ${activeTab === 'exams' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-xl shadow-indigo-600/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+            >
+              <BookOpen className={`w-4 h-4 ${activeTab === 'exams' ? 'text-white' : ''}`} />
+              <span className="hidden sm:inline">Exam Management</span>
+              <span className="sm:hidden">Exams</span>
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('students')} 
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-black transition-all duration-300 ${activeTab === 'students' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-xl shadow-indigo-600/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+            >
+              <Users className={`w-4 h-4 ${activeTab === 'students' ? 'text-white' : ''}`} />
+              <span className="hidden sm:inline">User & Access</span>
+              <span className="sm:hidden">Users</span>
+            </button>
+
+            <div className="h-6 w-[1px] bg-slate-200 mx-2 hidden md:block"></div>
+            
+            <button 
+              onClick={handleLogout} 
+              className="group bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 px-5 py-2.5 rounded-full text-xs sm:text-sm font-black transition-all flex items-center gap-2 ml-2"
+            >
+              <LogOut className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              <span className="hidden lg:inline">Logout</span>
+            </button>
           </div>
         </div>
       </nav>
@@ -85,19 +109,7 @@ const AdminDashboard = () => {
 
 
 
-        {!isSubView && (
-          <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
-            <div>
-              <h1 className="text-4xl font-outfit font-black text-slate-900 mb-1">Admin Dashboard</h1>
-              <p className="text-slate-500 font-medium text-sm">Manage exams and candidate accounts from here.</p>
-            </div>
-            
-            <div className="bg-white/60 backdrop-blur-xl p-1.5 flex gap-1 rounded-[22px] shadow-sm border border-slate-100/50 w-max">
-              <TabButton active={activeTab === 'exams'} onClick={() => setActiveTab('exams')} icon={BookOpen} label="Exam Management" />
-              <TabButton active={activeTab === 'students'} onClick={() => setActiveTab('students')} icon={Users} label="User & Access Management" />
-            </div>
-          </header>
-        )}
+
 
         <div className="w-full">
           <AnimatePresence mode="wait">
