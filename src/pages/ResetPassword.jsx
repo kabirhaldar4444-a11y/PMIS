@@ -66,7 +66,7 @@ const ResetPassword = () => {
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-[-35px] transform-gpu scale-90 sm:scale-100"
+          className="mb-2 transform-gpu scale-90 sm:scale-100"
         >
            <PMISLogo variant="login" />
         </motion.div>

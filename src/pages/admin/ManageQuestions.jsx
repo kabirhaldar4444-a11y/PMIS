@@ -725,7 +725,7 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
          {/* JSON PASTE MODAL */}
          <AnimatePresence>
             {isJsonPasteOpen && (
-              <div className="fixed inset-0 z-[500] flex items-center justify-center p-6">
+              <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 sm:p-6">
                 <motion.div 
                   initial={{opacity:0}} 
                   animate={{opacity:1}} 
@@ -737,10 +737,10 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
                   initial={{scale:0.9, y:40, opacity:0}} 
                   animate={{scale:1, y:0, opacity:1}} 
                   exit={{scale:0.9, y:40, opacity:0}} 
-                  className="bg-[#0b0f1a] max-w-3xl w-full rounded-[2.5rem] flex flex-col overflow-hidden relative z-10 shadow-[0_0_100px_rgba(79,70,229,0.2)] border border-slate-800/50"
+                  className="bg-[#0b0f1a] w-full max-w-3xl h-[600px] max-h-[90vh] sm:max-h-[85vh] rounded-[2rem] sm:rounded-[2.5rem] flex flex-col overflow-hidden relative z-10 shadow-[0_0_100px_rgba(79,70,229,0.2)] border border-slate-800/50"
                 >
                    {/* EDITOR HEADER - VIBRANT NEON */}
-                   <div className="px-8 py-7 border-b border-white/5 bg-gradient-to-r from-indigo-900/40 via-fuchsia-900/20 to-transparent flex justify-between items-center relative overflow-hidden">
+                   <div className="px-6 py-5 sm:px-8 sm:py-7 border-b border-white/5 bg-gradient-to-r from-indigo-900/40 via-fuchsia-900/20 to-transparent flex justify-between items-center relative overflow-hidden shrink-0">
                       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50" />
                       <div className="flex items-center gap-5">
                          <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-[20px] flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] ring-4 ring-indigo-500/10">
@@ -763,22 +763,22 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
                       </button>
                    </div>
 
-                   <div className="p-8 relative bg-[#0b0f1a] flex-1 overflow-hidden">
+                   <div className="p-4 sm:p-8 relative bg-[#0b0f1a] flex-1 overflow-hidden flex flex-col min-h-0">
                       <div className="absolute left-10 top-8 bottom-8 w-[1px] bg-indigo-500/20 z-20" />
                       
-                      <div className="relative w-full h-[450px]">
+                      <div className="relative w-full flex-1 min-h-[150px]">
                          {/* PRE - THE HIGHLIGHTED LAYER */}
                          <pre 
                            ref={editorPreRef}
                            className="absolute inset-0 pl-12 pr-6 py-0 m-0 pointer-events-none whitespace-pre-wrap break-words overflow-hidden font-mono text-[14px] leading-[22px] tracking-tight text-slate-500 select-none border-none bg-transparent"
-                           dangerouslySetInnerHTML={{ __html: highlightJson(jsonPayload) || '<span class="opacity-30">Waiting for payload...</span>' }}
+                           dangerouslySetInnerHTML={{ __html: highlightJson(jsonPayload) }}
                          />
                          
                          {/* TEXTAREA - THE INPUT LAYER */}
                          <textarea 
                            ref={editorTextareaRef}
                            onScroll={handleEditorScroll}
-                           className="absolute inset-0 pl-12 pr-6 py-0 bg-transparent text-transparent caret-fuchsia-400 font-mono text-[14px] leading-[22px] tracking-tight focus:outline-none resize-none custom-scrollbar selection:bg-fuchsia-500/30 overflow-y-auto border-none w-full h-full"
+                           className="absolute inset-0 pl-12 pr-6 py-0 bg-transparent text-transparent caret-fuchsia-400 font-mono text-[14px] leading-[22px] tracking-tight focus:outline-none resize-none custom-scrollbar-dark selection:bg-fuchsia-500/30 overflow-y-auto border-none w-full h-full"
                            spellCheck="false"
                            placeholder='{
   "title": "Exam Title",
@@ -796,22 +796,22 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
                       </div>
                    </div>
 
-                   <div className="px-10 py-8 border-t border-white/5 bg-[#1e293b]/10 flex justify-between items-center">
-                      <div className="flex flex-col gap-1">
+                   <div className="px-6 py-5 sm:px-10 sm:py-8 border-t border-white/5 bg-[#1e293b]/10 flex flex-col sm:flex-row gap-4 sm:gap-0 justify-between items-center shrink-0 w-full">
+                      <div className="flex flex-col gap-1 self-start sm:self-auto">
                          <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Compiler Status</p>
                          <p className="text-[12px] font-medium text-indigo-400/80 italic">Ready for smart injection...</p>
                       </div>
-                      <div className="flex gap-5">
+                      <div className="flex gap-3 sm:gap-5 w-full sm:w-auto justify-end">
                          <button 
                            onClick={() => setIsJsonPasteOpen(false)} 
-                           className="px-8 py-4 rounded-2xl font-black text-slate-500 hover:text-white transition-all text-xs uppercase tracking-widest"
+                           className="px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-black text-slate-500 hover:text-white transition-all text-xs uppercase tracking-widest"
                          >
                            Discard
                          </button>
                          <button 
                            onClick={handleJsonPaste} 
                            disabled={!jsonPayload.trim()} 
-                           className="group relative px-12 py-4 rounded-2xl font-black text-white overflow-hidden transition-all active:scale-95 disabled:opacity-30"
+                           className="group relative px-8 sm:px-12 py-3 sm:py-4 rounded-2xl font-black text-white overflow-hidden transition-all active:scale-95 disabled:opacity-30"
                          >
                             <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-fuchsia-600 group-hover:from-indigo-500 group-hover:to-fuchsia-500 transition-all" />
                             <div className="absolute inset-0 bg-[rgba(255,255,255,0.1)] opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -939,7 +939,7 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
   // EXAM OVERVIEW (Admin Dashboard Screenshot 1 integration)
   return (
     <div className="space-y-10 animate-fade-in pb-10">
-      <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_40px_rgb(0,0,0,0.03)] border border-slate-100 border-t-4 border-t-indigo-500 flex flex-col md:flex-row gap-8 items-center">
+      <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_40px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col md:flex-row gap-8 items-center">
          <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center shrink-0">
             <Plus className="text-indigo-500 w-6 h-6" strokeWidth={3}/>
          </div>
@@ -1078,7 +1078,7 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
                     <X className="w-6 h-6 text-slate-400" />
                  </button>
               </div>
-
+ 
               <div className="p-10 space-y-6">
                  <div>
                     <label className="text-[10px] uppercase font-black text-slate-400 mb-1.5 ml-2 block tracking-widest">Exam Title</label>
@@ -1097,7 +1097,7 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
                       onChange={e => setEditExamDuration(e.target.value)}
                     />
                  </div>
-
+ 
                  <div className="flex gap-4 pt-4">
                     <button onClick={() => setEditingExam(null)} className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all">Cancel</button>
                     <button onClick={handleUpdateExam} disabled={processing} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-600/20 hover:scale-[1.02] active:scale-95 transition-all">

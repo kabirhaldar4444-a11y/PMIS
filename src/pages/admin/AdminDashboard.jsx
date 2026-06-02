@@ -67,8 +67,8 @@ const AdminDashboard = () => {
     <div className="pb-10 bg-slate-50/30">
 
 
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl z-50">
-        <div className="bg-white/70 backdrop-blur-2xl rounded-full px-4 sm:px-8 py-2.5 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/50 ring-1 ring-slate-200/20">
+      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl z-50 pointer-events-none">
+        <div className="bg-white/70 backdrop-blur-2xl rounded-full px-4 sm:px-8 py-2.5 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/50 ring-1 ring-slate-200/20 pointer-events-auto">
           <div className="flex items-center">
             <PMISLogo variant="navbar" />
           </div>

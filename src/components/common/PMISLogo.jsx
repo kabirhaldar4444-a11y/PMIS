@@ -1,22 +1,22 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import pmisLogo from '../../assets/images/pmis-logo.png';
+import pmisLogo from '../../assets/images/pmis-logo.svg';
 
 const PMISLogo = ({ variant = 'default', className = '' }) => {
-  // Sizing definitions based on variant for premium, context-aware scaling
+  // Sizing definitions optimized for the new square SVG layout
   const configs = {
     login: {
       wrapper: "flex flex-col items-center mb-0",
-      img: "w-full max-w-[220px] sm:max-w-[280px] md:max-w-[320px] xl:max-w-[360px]"
+      img: "w-full max-w-[120px] sm:max-w-[150px] md:max-w-[180px]"
     },
 
     navbar: {
       wrapper: "flex items-center",
-      img: "h-8 sm:h-9 md:h-10 xl:h-11 w-auto"
+      img: "h-8 sm:h-9 md:h-10 w-auto"
     },
     default: {
       wrapper: "flex items-center",
-      img: "w-48 h-auto"
+      img: "w-32 h-32"
     }
   };
 
@@ -35,7 +35,7 @@ const PMISLogo = ({ variant = 'default', className = '' }) => {
     >
       <img
         src={pmisLogo}
-        alt="Project Management Institute Services"
+        alt="PMIS"
         className={`${config.img} object-contain select-none pointer-events-none drop-shadow-sm`}
         draggable={false}
       />

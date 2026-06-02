@@ -124,8 +124,8 @@ const CandidateDashboard = () => {
         <DisclaimerOverlay user={user} profile={profile} />
 
         {/* Premium Floating Glass Navbar */}
-        <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl z-[100] transition-all duration-300">
-          <div className="bg-white/70 backdrop-blur-2xl rounded-[2rem] px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.04)] border border-white/60">
+        <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl z-[100] transition-all duration-300 pointer-events-none">
+          <div className="bg-white/70 backdrop-blur-2xl rounded-[2rem] px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.04)] border border-white/60 pointer-events-auto">
             <div className="flex items-center pl-2">
               <PMISLogo variant="navbar" />
             </div>

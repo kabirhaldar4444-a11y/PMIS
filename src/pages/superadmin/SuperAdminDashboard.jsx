@@ -35,8 +35,8 @@ const SuperAdminDashboard = () => {
     <div className="pb-10 page-transition">
 
 
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50">
-        <div className="glass-navbar rounded-full px-8 py-3 flex items-center justify-between shadow-2xl backdrop-blur-2xl border-purple-500/20 shadow-purple-500/10">
+      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50 pointer-events-none">
+        <div className="glass-navbar rounded-full px-8 py-3 flex items-center justify-between shadow-2xl backdrop-blur-2xl border-purple-500/20 shadow-purple-500/10 pointer-events-auto">
           <div className="flex items-center gap-3">
             <PMISLogo variant="navbar" />
             <span className="font-outfit font-bold text-xl tracking-tight hidden sm:block">SUPER ADMIN</span>
