@@ -3,11 +3,13 @@ import { supabase } from '../../utils/supabase';
 import { motion } from 'framer-motion';
 import { ShieldAlert, Users, LogOut, ArrowRight, Activity } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 import PMISLogo from '../../components/common/PMISLogo';
 
 const SuperAdminDashboard = () => {
   const { logout } = useAuth();
+  const navigate = useNavigate();
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,9 +43,14 @@ const SuperAdminDashboard = () => {
             <PMISLogo variant="navbar" />
             <span className="font-outfit font-bold text-xl tracking-tight hidden sm:block">SUPER ADMIN</span>
           </div>
-          <button onClick={logout} className="bg-slate-900 text-white px-6 py-2 rounded-full text-sm font-bold shadow-xl hover:scale-[1.03] transition-all">
-            Logout Force
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/admin')} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full text-sm font-bold shadow-xl hover:scale-[1.03] transition-all">
+              Admin Portal
+            </button>
+            <button onClick={logout} className="bg-slate-900 text-white px-6 py-2 rounded-full text-sm font-bold shadow-xl hover:scale-[1.03] transition-all">
+              Logout Force
+            </button>
+          </div>
         </div>
       </nav>
 

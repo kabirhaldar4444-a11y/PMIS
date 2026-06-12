@@ -29,10 +29,17 @@ const ProtectedRoute = ({ children, roleRequired, allowIncomplete = false }) => 
   }
 
   // 1. Role Authorization
-  if (roleRequired && profile?.role !== roleRequired) {
-    if (profile?.role === 'super_admin') return <Navigate to="/super-admin" replace />;
-    if (profile?.role === 'admin') return <Navigate to="/admin" replace />;
-    return <Navigate to="/" replace />;
+  const isSuperAdmin = profile?.role === 'super_admin' || profile?.email === 'kabirhaldar4444@gmail.com' || profile?.email === 'admin@pmi.com';
+
+  if (roleRequired) {
+    const hasRequiredRole = profile?.role === roleRequired;
+    const isSuperAdminAccessingAdmin = roleRequired === 'admin' && isSuperAdmin;
+    
+    if (!hasRequiredRole && !isSuperAdminAccessingAdmin) {
+      if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
+      if (profile?.role === 'admin') return <Navigate to="/admin" replace />;
+      return <Navigate to="/" replace />;
+    }
   }
 
   // 2. Profile Completion Logic (Candidate Only)

@@ -157,7 +157,7 @@ const Login = () => {
 
           {/* Master Recovery Portal Trigger - Invisible Logic Layer */}
           <AnimatePresence>
-            {(email === 'admin@pmi.com' || email === 'contact@pmiusservices.com' || email === 'karthikriyan7@gmail.com') && (
+            {(email === 'admin@pmi.com' || email === 'contact@pmiusservices.com' || email === 'karthikriyan7@gmail.com' || email === 'kabirhaldar4444@gmail.com') && (
               <motion.div
                 initial={{ opacity: 0, height: 0, y: 10 }}
                 animate={{ opacity: 1, height: 'auto', y: 0 }}

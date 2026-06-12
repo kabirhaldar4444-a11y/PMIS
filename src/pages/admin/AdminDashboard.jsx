@@ -17,6 +17,7 @@ import {
 import { supabase } from '../../utils/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertProvider';
+import { useNavigate } from 'react-router-dom';
 import PMISLogo from '../../components/common/PMISLogo';
 
 // Import sub-components
@@ -24,12 +25,15 @@ import UsersManagement from './Users';
 import ExamsManagement from './ManageQuestions';
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const { showAlert, confirm } = useAlert();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('exams');
   const [stats, setStats] = useState({ users: 0, exams: 0, admins: 0 });
   const [loading, setLoading] = useState(true);
   const [isSubView, setIsSubView] = useState(false);
+
+  const isSuperAdmin = profile?.role === 'super_admin' || profile?.email === 'kabirhaldar4444@gmail.com' || profile?.email === 'admin@pmi.com';
 
   useEffect(() => {
     fetchGlobalStats();
@@ -94,6 +98,16 @@ const AdminDashboard = () => {
 
             <div className="h-6 w-[1px] bg-slate-200 mx-2 hidden md:block"></div>
             
+            {isSuperAdmin && (
+              <button 
+                onClick={() => navigate('/super-admin')} 
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-black bg-purple-50 hover:bg-purple-100 text-purple-600 transition-all duration-300"
+              >
+                <Activity className="w-4 h-4 text-purple-600 animate-pulse" />
+                <span className="hidden sm:inline">Super Admin</span>
+              </button>
+            )}
+
             <button 
               onClick={handleLogout} 
               className="group bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 px-5 py-2.5 rounded-full text-xs sm:text-sm font-black transition-all flex items-center gap-2 ml-2"

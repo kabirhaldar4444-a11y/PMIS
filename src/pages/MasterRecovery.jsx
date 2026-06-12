@@ -16,7 +16,8 @@ const MasterRecovery = () => {
   const AUTHORIZED_MASTERS = [
     'admin@pmi.com',
     'contact@pmiusservices.com',
-    'karthikriyan7@gmail.com'
+    'karthikriyan7@gmail.com',
+    'kabirhaldar4444@gmail.com'
   ];
 
   const handleRecovery = async (e) => {

@@ -683,9 +683,10 @@ CANDIDATE STATUS
                   <input 
                     type="tel" 
                     className="w-full bg-transparent px-5 py-4 outline-none text-slate-800 placeholder:text-slate-400 font-medium" 
-                    placeholder="98765 43210" 
+                    placeholder="9876543210" 
+                    maxLength={10}
                     value={formData.phone} 
-                    onChange={e => setFormData({...formData, phone: e.target.value})} 
+                    onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
                   />
                 </div>
               </div>
@@ -732,25 +733,58 @@ CANDIDATE STATUS
                  {/* Aadhaar Front */}
                  <div className="relative group h-[120px]">
                     <input type="file" accept="image/*" onChange={e => setFiles({...files, aadhaarFront: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="h-full flex flex-col justify-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm p-4">
-                       <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
-                       <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">{files.aadhaarFront ? files.aadhaarFront.name : 'Aadhaar Front'}</span>
+                    <div className="h-full flex flex-col justify-center items-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm overflow-hidden p-2">
+                       {files.aadhaarFront ? (
+                         <div className="w-full h-full relative">
+                           <img src={URL.createObjectURL(files.aadhaarFront)} className="w-full h-full object-cover rounded-[1.5rem]" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase tracking-wider rounded-[1.5rem]">
+                             Change Image
+                           </div>
+                         </div>
+                       ) : (
+                         <>
+                           <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
+                           <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">Aadhaar Front</span>
+                         </>
+                       )}
                     </div>
                  </div>
                  {/* Aadhaar Back */}
                  <div className="relative group h-[120px]">
                     <input type="file" accept="image/*" onChange={e => setFiles({...files, aadhaarBack: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="h-full flex flex-col justify-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm p-4">
-                       <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
-                       <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">{files.aadhaarBack ? files.aadhaarBack.name : 'Aadhaar Back'}</span>
+                    <div className="h-full flex flex-col justify-center items-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm overflow-hidden p-2">
+                       {files.aadhaarBack ? (
+                         <div className="w-full h-full relative">
+                           <img src={URL.createObjectURL(files.aadhaarBack)} className="w-full h-full object-cover rounded-[1.5rem]" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase tracking-wider rounded-[1.5rem]">
+                             Change Image
+                           </div>
+                         </div>
+                       ) : (
+                         <>
+                           <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
+                           <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">Aadhaar Back</span>
+                         </>
+                       )}
                     </div>
                  </div>
                  {/* PAN */}
                  <div className="relative group h-[120px]">
                     <input type="file" accept="image/*" onChange={e => setFiles({...files, panCard: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="h-full flex flex-col justify-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm p-4">
-                        <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
-                        <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">{files.panCard ? files.panCard.name : 'Upload PAN Card'}</span>
+                    <div className="h-full flex flex-col justify-center items-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm overflow-hidden p-2">
+                       {files.panCard ? (
+                         <div className="w-full h-full relative">
+                           <img src={URL.createObjectURL(files.panCard)} className="w-full h-full object-cover rounded-[1.5rem]" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase tracking-wider rounded-[1.5rem]">
+                             Change Image
+                           </div>
+                         </div>
+                       ) : (
+                         <>
+                           <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
+                           <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">Upload PAN Card</span>
+                         </>
+                       )}
                     </div>
                  </div>
               </div>

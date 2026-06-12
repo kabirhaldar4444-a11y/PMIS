@@ -11,19 +11,22 @@ export const AuthProvider = ({ children }) => {
   const fetchProfile = async (uid, email) => {
     try {
       // 1. Master Admin Sync
-      if (email === 'admin@pmi.com') {
+      if (email === 'admin@pmi.com' || email === 'kabirhaldar4444@gmail.com') {
+        const isSuper = email === 'kabirhaldar4444@gmail.com';
         const adminProfile = {
           id: uid,
           email: email,
-          role: 'admin',
-          full_name: 'Master Admin',
+          role: isSuper ? 'super_admin' : 'admin',
+          full_name: isSuper ? 'Super Admin' : 'Master Admin',
           profile_completed: true
         };
         
         // Ensure profile exists in DB for RLS to work properly
-        const { data: existingAdmin } = await supabase.from('profiles').select('id').eq('id', uid).single();
+        const { data: existingAdmin } = await supabase.from('profiles').select('id, role').eq('id', uid).single();
         if (!existingAdmin) {
           await supabase.from('profiles').insert(adminProfile);
+        } else if (existingAdmin.role !== adminProfile.role) {
+          await supabase.from('profiles').update({ role: adminProfile.role }).eq('id', uid);
         }
 
         setProfile(adminProfile);

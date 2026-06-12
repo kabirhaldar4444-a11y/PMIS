@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Plus, Search, Shield, Eye, Edit2, Trash2, Lock, Unlock, X, 
+import {
+  Plus, Search, Shield, Eye, Edit2, Trash2, Lock, Unlock, X,
   Loader2, Mail, User, Key, CheckCircle, FileText, Download, UploadCloud, MapPin, Phone,
   RotateCw, ArrowLeft, Send, ShieldAlert
 } from 'lucide-react';
@@ -12,35 +12,64 @@ import { useAuth } from '../../context/AuthContext';
 const Users = () => {
   const { showAlert } = useAlert();
   const { profile } = useAuth();
-  
-  // Super Admin Check (strictly admin@pmi.com as requested)
-  const isSuperAdmin = profile?.email === 'admin@pmi.com';
+
+  // Super Admin Check (strictly super_admin role, kabirhaldar4444@gmail.com, or admin@pmi.com)
+  const isSuperAdmin = profile?.role === 'super_admin' || profile?.email === 'kabirhaldar4444@gmail.com' || profile?.email === 'admin@pmi.com';
+  // Allow any user with admin role to manage candidates
+  const isAdmin = profile?.role === 'admin' || isSuperAdmin;
   const [activeTab, setActiveTab] = useState('candidates'); // 'candidates', 'admins'
   const [users, setUsers] = useState([]);
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
-  
+
   // Global View Document overlay state
   const [globalViewingDoc, setGlobalViewingDoc] = useState(null);
+
+  // Question Breakdown states
+  const [viewingBreakdown, setViewingBreakdown] = useState(null);
+  const [breakdownQuestions, setBreakdownQuestions] = useState([]);
+  const [loadingBreakdown, setLoadingBreakdown] = useState(false);
+
+  const fetchBreakdownQuestions = async (examId) => {
+    setLoadingBreakdown(true);
+    try {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('exam_id', examId);
+      if (error) throw error;
+      setBreakdownQuestions(data || []);
+    } catch (err) {
+      showAlert('Failed to load question breakdown.', 'error');
+    } finally {
+      setLoadingBreakdown(false);
+    }
+  };
+
+  const handleOpenBreakdown = (sub) => {
+    setViewingBreakdown(sub);
+    fetchBreakdownQuestions(sub.exam_id);
+  };
 
   // Form State
   const [newUser, setNewUser] = useState({ email: '', password: '', fullName: '', allottedExamId: '' });
   const [creating, setCreating] = useState(false);
+  const [createModalRole, setCreateModalRole] = useState('candidate'); // 'candidate' or 'admin'
 
   useEffect(() => {
     fetchData();
-    // Safety check: If a normal admin somehow gets to 'admins' tab, force back to 'candidates'
-    if (!isSuperAdmin && activeTab === 'admins') {
+    // Safety check: If a non-admin somehow gets to 'admins' tab, force back to 'candidates'
+    if (!isAdmin && activeTab === 'admins') {
       setActiveTab('candidates');
     }
-  }, [isSuperAdmin, activeTab]);
+  }, [isAdmin, activeTab]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -62,6 +91,9 @@ const Users = () => {
     e.preventDefault();
     setCreating(true);
     try {
+      if (createModalRole === 'admin' && !isSuperAdmin) {
+        throw new Error('Access Denied: Only Super Admins can create administrative accounts.');
+      }
       const { data: newUserId, error } = await supabase.rpc('create_candidate', {
         p_email: newUser.email,
         p_password: newUser.password,
@@ -71,44 +103,44 @@ const Users = () => {
 
       if (error) {
         if (error.code === 'P0001' || error.message.includes('does not exist')) {
-           throw new Error('Database Function Missing.');
+          throw new Error('Database Function Missing.');
         }
         throw error;
       };
 
-      if (activeTab === 'admins') {
+      if (createModalRole === 'admin') {
         const { error: roleError } = await supabase
           .from('profiles')
           .update({ role: 'admin' })
           .eq('id', newUserId);
-        
+
         if (roleError) throw roleError;
       }
 
-      await fetchData(); 
-      showAlert(`${activeTab === 'admins' ? 'Admin' : 'Candidate'} account created successfully!`, 'success');
+      await fetchData();
+      showAlert(`${createModalRole === 'admin' ? 'Admin' : 'Candidate'} account created successfully!`, 'success');
       setIsCreateModalOpen(false);
       setNewUser({ email: '', password: '', fullName: '', allottedExamId: '' });
       setCreating(false);
     } catch (error) {
-       showAlert(error.message, 'error');
-       setCreating(false);
+      showAlert(error.message, 'error');
+      setCreating(false);
     }
   };
 
   const handleUpdateProfile = async (updatedData) => {
     try {
       const { password, ...profileFields } = updatedData;
-      
+
       // ROBUST CLEANUP: Explicitly only send columns that exist in the profiles table
       const allowedProfileColumns = [
-        'full_name', 'phone', 'address', 'state', 'city', 
-        'role', 'profile_completed', 'disclaimer_accepted', 
+        'full_name', 'phone', 'address', 'state', 'city',
+        'role', 'profile_completed', 'disclaimer_accepted',
         'allotted_exam_ids', 'is_exam_locked', 'can_register',
-        'profile_photo_url', 'live_photo_url', 'aadhaar_front_url', 
+        'profile_photo_url', 'live_photo_url', 'aadhaar_front_url',
         'aadhaar_back_url', 'pan_card_url', 'signature_url'
       ];
-      
+
       const cleanProfileData = {};
       allowedProfileColumns.forEach(col => {
         if (profileFields[col] !== undefined) {
@@ -128,7 +160,7 @@ const Users = () => {
         .select();
 
       if (error) throw error;
-      
+
       // Handle Submission Overrides if any
       if (updatedData.submissionChanges && Object.keys(updatedData.submissionChanges).length > 0) {
         const changes = updatedData.submissionChanges;
@@ -142,7 +174,7 @@ const Users = () => {
             .from('submissions')
             .update(subUpdate)
             .eq('id', subId);
-          
+
           if (subError) {
             console.error('Submission update error:', subError);
             throw new Error(`Failed to update results: ${subError.message}. You may need to update your database security policies.`);
@@ -164,23 +196,28 @@ const Users = () => {
 
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
-    
+
     // Authorization Check to be doubly sure
     if (userToDelete.role === 'admin' && !isSuperAdmin) {
-       showAlert('Access Denied: Only Super Admins can delete administrative accounts.', 'error');
-       setUserToDelete(null);
-       return;
+      showAlert('Access Denied: Only Super Admins can delete administrative accounts.', 'error');
+      setUserToDelete(null);
+      return;
     }
 
     try {
-      // Attempt backend delete of profile (silently failing if missing RPC auth cascading)
-      await supabase.from('profiles').delete().eq('id', userToDelete.id);
-      
+      // Invoke RPC user deletion function
+      const { error } = await supabase.rpc('delete_user_by_id', {
+        p_user_id: userToDelete.id
+      });
+
+      if (error) throw error;
+
       // Remove from UI state to instantly reflect success
       setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
       showAlert('User account deleted successfully.', 'success');
     } catch (e) {
-      showAlert('Error processing deletion.', 'error');
+      console.error('Deletion error:', e);
+      showAlert(e.message || 'Error processing deletion.', 'error');
     } finally {
       setUserToDelete(null);
     }
@@ -188,8 +225,8 @@ const Users = () => {
 
   const filteredUsers = users.filter(u => {
     const searchLower = (searchTerm || '').toLowerCase();
-    const matchesSearch = (u.full_name || '').toLowerCase().includes(searchLower) || 
-                          (u.email || '').toLowerCase().includes(searchLower);
+    const matchesSearch = (u.full_name || '').toLowerCase().includes(searchLower) ||
+      (u.email || '').toLowerCase().includes(searchLower);
     const matchesTab = activeTab === 'candidates' ? u.role === 'candidate' : u.role === 'admin';
     return matchesSearch && matchesTab;
   });
@@ -208,27 +245,27 @@ const Users = () => {
       {/* Super Admin Dashboard Notice */}
       {!isSuperAdmin && activeTab === 'admins' && (
         <div className="bg-amber-50 border border-amber-200 p-6 rounded-3xl flex items-center gap-4 animate-fade-in shadow-sm">
-           <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
-             <Shield className="w-6 h-6" />
-           </div>
-           <div>
-             <h4 className="font-black text-amber-900 text-sm">Restricted Control</h4>
-             <p className="text-amber-700/80 text-[11px] font-bold uppercase tracking-wider mt-0.5">Contact the Super Admin (admin@pmi.com) for administrative account creation.</p>
-           </div>
+          <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+            <Shield className="w-6 h-6" />
+          </div>
+          <div>
+            <h4 className="font-black text-amber-900 text-sm">Restricted Control</h4>
+            <p className="text-amber-700/80 text-[11px] font-bold uppercase tracking-wider mt-0.5">Contact the Super Admin (admin@pmi.com) for administrative account creation.</p>
+          </div>
         </div>
       )}
 
       {/* Consolidated Controls */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex bg-slate-100/50 p-1 rounded-full w-max backdrop-blur-md border border-white/40 shadow-inner">
-          <button 
+          <button
             onClick={() => setActiveTab('candidates')}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === 'candidates' ? 'bg-white text-primary-600 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <User className="w-4 h-4" /> Candidates
           </button>
-          {isSuperAdmin && (
-            <button 
+          {isAdmin && (
+            <button
               onClick={() => setActiveTab('admins')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === 'admins' ? 'bg-secondary-50 text-secondary-600 shadow-[0_4px_20px_-4px_rgba(16,185,129,0.2)] ring-1 ring-secondary-200/50' : 'text-slate-500 hover:text-slate-800'}`}
             >
@@ -240,26 +277,48 @@ const Users = () => {
         <div className="flex gap-3 items-center w-full md:w-auto">
           <div className="relative flex-1 md:flex-none">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
-              placeholder="Search by name or email..." 
+            <input
+              placeholder="Search by name or email..."
               className="input-premium w-full lg:w-72 !py-3 !pl-12 !bg-white/60 backdrop-blur-md"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
-          {(!(activeTab === 'admins' && !isSuperAdmin)) && (
-            <button 
-              onClick={() => {
-                if (activeTab === 'admins' && !isSuperAdmin) {
-                  showAlert('Only Super Admins can create new admin accounts.', 'error');
-                  return;
-                }
-                setIsCreateModalOpen(true);
-              }}
-              className="btn-premium !py-3 !px-6 h-[48px] shadow-lg shadow-primary-500/20"
-            >
-              <Plus className="w-5 h-5" /> New {activeTab === 'candidates' ? 'Candidate' : 'Admin'}
-            </button>
+          {isAdmin && activeTab === 'candidates' ? (
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setCreateModalRole('candidate');
+                  setIsCreateModalOpen(true);
+                }}
+                className="btn-premium !py-3 !px-6 h-[48px] shadow-lg shadow-primary-500/20"
+              >
+                <Plus className="w-5 h-5" /> New Candidate
+              </button>
+              {isSuperAdmin && (
+                <button
+                  onClick={() => {
+                    setCreateModalRole('admin');
+                    setIsCreateModalOpen(true);
+                  }}
+                  className="btn-premium !py-3 !px-6 h-[48px] bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-full shadow-lg shadow-purple-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
+                >
+                  <Plus className="w-5 h-5" /> Create Admin User
+                </button>
+              )}
+            </div>
+          ) : (
+            isSuperAdmin && (
+              <button
+                onClick={() => {
+                  setCreateModalRole('admin');
+                  setIsCreateModalOpen(true);
+                }}
+                className="btn-premium !py-3 !px-6 h-[48px] shadow-lg shadow-primary-500/20"
+              >
+                <Plus className="w-5 h-5" /> New Admin
+              </button>
+            )
           )}
         </div>
       </div>
@@ -268,18 +327,18 @@ const Users = () => {
         <>
           {/* Stats */}
           <div className="grid md:grid-cols-3 gap-6">
-            <StatBox label="TOTAL USERS" value={stats.total} />
-            <StatBox label="ACTIVE ACCESS" value={stats.active} />
-            <StatBox label="STAFF ADMINS" value={stats.admins} />
+            <StatBox label="TOTAL USERS" value={stats.total} onClick={() => setActiveTab('candidates')} />
+            <StatBox label="ACTIVE ACCESS" value={stats.active} onClick={() => setActiveTab('candidates')} />
+            <StatBox label="STAFF ADMINS" value={stats.admins} onClick={() => setActiveTab('admins')} />
           </div>
 
           {/* Candidates Grid */}
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
             <AnimatePresence>
               {filteredUsers.map((u) => (
-                <CandidateCard 
-                  key={u.id} 
-                  user={u} 
+                <CandidateCard
+                  key={u.id}
+                  user={u}
                   canManage={isSuperAdmin || u.role === 'candidate'}
                   onView={() => setViewingUser(u)}
                   onEdit={() => setEditingUser(u)}
@@ -290,11 +349,14 @@ const Users = () => {
           </div>
         </>
       ) : (
-        <AdminAccessControl 
-          users={users} 
-          searchTerm={searchTerm} 
-          setSearchTerm={setSearchTerm} 
-          onAddAdmin={() => setIsCreateModalOpen(true)}
+        <AdminAccessControl
+          users={users}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          onAddAdmin={() => {
+            setCreateModalRole('admin');
+            setIsCreateModalOpen(true);
+          }}
           onView={(u) => setViewingUser(u)}
           onEdit={(u) => setEditingUser(u)}
           onDelete={(u) => setUserToDelete(u)}
@@ -303,43 +365,53 @@ const Users = () => {
       )}
 
       {/* Modals & Drawers */}
-      <CreateUserModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
-        newUser={newUser} 
-        setNewUser={setNewUser} 
-        handleCreateUser={handleCreateUser} 
-        creating={creating} 
-        exams={exams} 
-        isAdmin={activeTab === 'admins'}
+      <CreateUserModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        newUser={newUser}
+        setNewUser={setNewUser}
+        handleCreateUser={handleCreateUser}
+        creating={creating}
+        exams={exams}
+        isAdmin={createModalRole === 'admin'}
       />
 
-      <EditCandidateModal 
-        user={editingUser} 
-        exams={exams} 
-        onClose={() => setEditingUser(null)} 
-        onSave={handleUpdateProfile} 
+      <EditCandidateModal
+        user={editingUser}
+        exams={exams}
+        onClose={() => setEditingUser(null)}
+        onSave={handleUpdateProfile}
+        onViewBreakdown={handleOpenBreakdown}
       />
 
       <AnimatePresence>
         {viewingUser && (
-          <ViewCandidateDrawer 
-            user={viewingUser} 
-            onClose={() => setViewingUser(null)} 
+          <ViewCandidateDrawer
+            user={viewingUser}
+            onClose={() => setViewingUser(null)}
             onViewDoc={setGlobalViewingDoc}
+            onViewBreakdown={handleOpenBreakdown}
           />
         )}
       </AnimatePresence>
 
-      <DeleteConfirmModal 
-        user={userToDelete} 
-        onClose={() => setUserToDelete(null)} 
-        onConfirm={handleDeleteUser} 
+      <DeleteConfirmModal
+        user={userToDelete}
+        onClose={() => setUserToDelete(null)}
+        onConfirm={handleDeleteUser}
       />
 
-      <DocumentViewerOverlay 
-         doc={globalViewingDoc} 
-         onClose={() => setGlobalViewingDoc(null)} 
+      <QuestionBreakdownModal
+        isOpen={!!viewingBreakdown}
+        onClose={() => setViewingBreakdown(null)}
+        submission={viewingBreakdown}
+        questions={breakdownQuestions}
+        loading={loadingBreakdown}
+      />
+
+      <DocumentViewerOverlay
+        doc={globalViewingDoc}
+        onClose={() => setGlobalViewingDoc(null)}
       />
     </div>
   );
@@ -349,15 +421,18 @@ const Users = () => {
 // SUB COMPONENTS
 // ----------------------------------------------------
 
-const StatBox = ({ label, value }) => (
-  <div className="bg-white/60 backdrop-blur-xl border border-white/40 p-8 rounded-[2rem] flex flex-col justify-between h-36 shadow-sm hover:shadow-md transition-shadow">
+const StatBox = ({ label, value, onClick }) => (
+  <div
+    onClick={onClick}
+    className={`bg-white/60 backdrop-blur-xl border border-white/40 p-8 rounded-[2rem] flex flex-col justify-between h-36 shadow-sm hover:shadow-md transition-all ${onClick ? 'cursor-pointer hover:scale-[1.01] hover:border-slate-300 active:scale-95' : ''}`}
+  >
     <span className="text-xs font-black uppercase tracking-widest text-slate-400">{label}</span>
     <span className="text-5xl font-outfit font-black text-slate-800 leading-none">{value}</span>
   </div>
 );
 
 const CandidateCard = ({ user, onView, onEdit, onDelete, canManage }) => (
-  <motion.div 
+  <motion.div
     layout
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -414,8 +489,8 @@ const AdminAccessControl = ({ users, searchTerm, setSearchTerm, onAddAdmin, onVi
 
   const filteredAdmins = staffAdmins.filter(u => {
     const searchLower = (searchTerm || '').toLowerCase();
-    return (u.full_name || '').toLowerCase().includes(searchLower) || 
-           (u.email || '').toLowerCase().includes(searchLower);
+    return (u.full_name || '').toLowerCase().includes(searchLower) ||
+      (u.email || '').toLowerCase().includes(searchLower);
   });
 
   return (
@@ -430,12 +505,12 @@ const AdminAccessControl = ({ users, searchTerm, setSearchTerm, onAddAdmin, onVi
         <div className="flex-1 relative z-10">
           <h3 className="text-2xl font-black text-slate-900 mb-1">Admin Access Control</h3>
           <p className="text-slate-500 text-sm font-medium max-w-md">
-            {isSuperAdmin 
-              ? 'Manage administrative privileges and staff accounts. System-wide changes require confirmation.' 
+            {isSuperAdmin
+              ? 'Manage administrative privileges and staff accounts. System-wide changes require confirmation.'
               : 'View administrative staff roles. Privilege management is restricted to Super Admin.'}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
           <div className="flex-1 md:flex-none px-6 py-4 bg-purple-50 rounded-2xl border border-purple-100 text-center ring-2 ring-purple-500/10 backdrop-blur-sm">
             <span className="block text-2xl font-black text-purple-600 leading-none">{staffAdmins.length}</span>
@@ -446,7 +521,7 @@ const AdminAccessControl = ({ users, searchTerm, setSearchTerm, onAddAdmin, onVi
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 block">Candidates</span>
           </div>
         </div>
-        
+
         {isSuperAdmin && (
           <button onClick={onAddAdmin} className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-purple-500/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 relative z-10">
             <Plus className="w-5 h-5" /> Add New Admin
@@ -456,9 +531,9 @@ const AdminAccessControl = ({ users, searchTerm, setSearchTerm, onAddAdmin, onVi
 
       <div className="relative">
         <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-        <input 
-          placeholder="Search admins by name or email..." 
-          className="input-premium w-full !pl-14 !py-4" 
+        <input
+          placeholder="Search admins by name or email..."
+          className="input-premium w-full !pl-14 !py-4"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
         />
@@ -468,22 +543,22 @@ const AdminAccessControl = ({ users, searchTerm, setSearchTerm, onAddAdmin, onVi
         {filteredAdmins.map(admin => (
           <div key={admin.id} className="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:shadow-md transition-shadow group">
             <div className="flex items-center gap-4">
-               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-indigo-100 border border-purple-200/50 flex items-center justify-center text-purple-600 font-bold overflow-hidden shadow-inner">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-indigo-100 border border-purple-200/50 flex items-center justify-center text-purple-600 font-bold overflow-hidden shadow-inner">
                 {admin.profile_photo_url ? <img src={admin.profile_photo_url} className="w-full h-full object-cover" /> : admin.full_name?.charAt(0) || 'A'}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                   <h4 className="font-bold text-slate-800 leading-tight">{admin.full_name}</h4>
-                   {admin.email === 'admin@pmi.com' && (
-                     <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-tighter rounded-md border border-amber-200 animate-pulse">
-                        <Shield className="w-2.5 h-2.5" /> SUPER ADMIN
-                     </div>
-                   )}
+                  <h4 className="font-bold text-slate-800 leading-tight">{admin.full_name}</h4>
+                  {admin.email === 'admin@pmi.com' && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-tighter rounded-md border border-amber-200 animate-pulse">
+                      <Shield className="w-2.5 h-2.5" /> SUPER ADMIN
+                    </div>
+                  )}
                 </div>
                 <p className="text-sm text-slate-500">{admin.email}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
               <div className="px-4 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-purple-100 flex items-center gap-1.5">
                 <Shield className="w-3 h-3" /> ADMIN
@@ -491,7 +566,7 @@ const AdminAccessControl = ({ users, searchTerm, setSearchTerm, onAddAdmin, onVi
 
               <div className="flex items-center gap-4">
                 <span className="text-sm font-bold text-slate-500 hidden sm:block">Admin Access</span>
-                <button 
+                <button
                   disabled={!isSuperAdmin}
                   className={`w-12 h-6 rounded-full relative p-0.5 shadow-inner transition-colors focus:outline-none ring-2 ring-transparent ${isSuperAdmin ? 'bg-purple-500 cursor-pointer focus:ring-purple-200' : 'bg-slate-300 cursor-not-allowed'}`}
                 >
@@ -534,7 +609,7 @@ const CreateUserModal = ({ isOpen, onClose, newUser, setNewUser, handleCreateUse
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
     let password = "";
     for (let i = 0; i < 12; i++) {
-        password += chars.charAt(Math.floor(Math.random() * chars.length));
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     setNewUser(prev => ({ ...prev, password }));
     setShowPassword(true);
@@ -544,12 +619,12 @@ const CreateUserModal = ({ isOpen, onClose, newUser, setNewUser, handleCreateUse
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={onClose}
           />
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
             className="bg-white max-w-[440px] w-full rounded-[1.5rem] shadow-2xl relative z-10 flex flex-col overflow-hidden border border-white/20 max-h-[90vh]"
           >
@@ -565,96 +640,96 @@ const CreateUserModal = ({ isOpen, onClose, newUser, setNewUser, handleCreateUse
                 </div>
               </div>
               <button onClick={onClose} className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors flex shrink-0 mt-1">
-                <X className="w-4 h-4"/>
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="bg-slate-50 flex-1 relative overflow-hidden flex flex-col min-h-0">
-               {/* Body is now scrollable */}
-               <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative z-10">
-                  {/* Decorative faint background icon */}
-                  <User className="absolute right-8 top-8 w-40 h-40 text-slate-200/50 -rotate-12 pointer-events-none" strokeWidth={-1} fill="currentColor" />
+              {/* Body is now scrollable */}
+              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative z-10">
+                {/* Decorative faint background icon */}
+                <User className="absolute right-8 top-8 w-40 h-40 text-slate-200/50 -rotate-12 pointer-events-none" strokeWidth={-1} fill="currentColor" />
 
-                  <div className="text-center mb-10 relative z-10">
-                    <h3 className="text-[28px] font-black text-[#1a202c] mb-1 tracking-tight">Create {isAdmin ? 'Staff' : 'Candidate'} Access</h3>
-                    <p className="text-slate-500 text-sm font-medium">Register a new {isAdmin ? 'administrative staff member' : 'student taking an examination'}.</p>
+                <div className="text-center mb-10 relative z-10">
+                  <h3 className="text-[28px] font-black text-[#1a202c] mb-1 tracking-tight">Create {isAdmin ? 'Staff' : 'Candidate'} Access</h3>
+                  <p className="text-slate-500 text-sm font-medium">Register a new {isAdmin ? 'administrative staff member' : 'student taking an examination'}.</p>
+                </div>
+
+                <form id="create-user-form" onSubmit={handleCreateUser} className="space-y-6 relative z-10">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-[#6b7280] ml-2">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-500" />
+                      <input
+                        type="email" required placeholder="user@elitetoolistic.com"
+                        className="w-full pl-[50px] pr-4 py-3.5 bg-slate-100/80 border border-slate-200 text-slate-800 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white transition-all text-[15px] font-medium placeholder:font-normal placeholder:text-slate-400"
+                        value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                      />
+                    </div>
                   </div>
 
-                  <form id="create-user-form" onSubmit={handleCreateUser} className="space-y-6 relative z-10">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-wider text-[#6b7280] ml-2">Email Address</label>
-                        <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-500" />
-                          <input 
-                            type="email" required placeholder="user@elitetoolistic.com" 
-                            className="w-full pl-[50px] pr-4 py-3.5 bg-slate-100/80 border border-slate-200 text-slate-800 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white transition-all text-[15px] font-medium placeholder:font-normal placeholder:text-slate-400"
-                            value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})}
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-wider text-[#6b7280] ml-2">Full Name</label>
-                        <div className="relative">
-                          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-500" />
-                          <input 
-                            type="text" required placeholder="e.g. John Doe" 
-                            className="w-full pl-[50px] pr-4 py-3.5 bg-slate-100/80 border border-slate-200 text-slate-800 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white transition-all text-[15px] font-medium placeholder:font-normal placeholder:text-slate-400"
-                            value={newUser.fullName} onChange={e => setNewUser({...newUser, fullName: e.target.value})}
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-wider text-[#6b7280] ml-2">Account Password</label>
-                        <div className="relative">
-                          <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-500" />
-                          <input 
-                            type="password" required placeholder="Generate a secure password..." 
-                            {...(showPassword ? { type: "text" } : {})}
-                            className="w-full pl-[50px] pr-[85px] py-3.5 bg-slate-100/80 border border-slate-200 text-slate-800 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white transition-all text-[15px] font-medium placeholder:font-normal placeholder:text-slate-400"
-                            value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})}
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2.5 text-slate-500">
-                              <button type="button" onClick={generatePassword} className="hover:text-indigo-600 transition-colors p-1"><RotateCw className="w-4 h-4" strokeWidth={2.5} /></button>
-                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="hover:text-indigo-600 transition-colors p-1">
-                                {showPassword ? <X className="w-4 h-4" strokeWidth={2.5} /> : <Eye className="w-4 h-4" strokeWidth={2.5} />}
-                              </button>
-                          </div>
-                        </div>
-                      </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-[#6b7280] ml-2">Full Name</label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-500" />
+                      <input
+                        type="text" required placeholder="e.g. John Doe"
+                        className="w-full pl-[50px] pr-4 py-3.5 bg-slate-100/80 border border-slate-200 text-slate-800 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white transition-all text-[15px] font-medium placeholder:font-normal placeholder:text-slate-400"
+                        value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })}
+                      />
+                    </div>
+                  </div>
 
-                      {!isAdmin && (
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-wider text-[#6b7280] ml-2">Initial Allotted Exam (Optional)</label>
-                          <div className="relative">
-                            <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-500" />
-                            <select 
-                              className="w-full pl-[50px] pr-4 py-3.5 bg-slate-100/80 border border-slate-200 text-slate-800 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white transition-all text-[15px] font-medium appearance-none cursor-pointer"
-                              value={newUser.allottedExamId} 
-                              onChange={e => setNewUser({...newUser, allottedExamId: e.target.value})}
-                            >
-                              <option value="">No exam initially assigned</option>
-                              {exams.map(ex => (
-                                <option key={ex.id} value={ex.id}>{ex.title}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      )}
-                  </form>
-               </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-[#6b7280] ml-2">Account Password</label>
+                    <div className="relative">
+                      <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-500" />
+                      <input
+                        type="password" required placeholder="Generate a secure password..."
+                        {...(showPassword ? { type: "text" } : {})}
+                        className="w-full pl-[50px] pr-[85px] py-3.5 bg-slate-100/80 border border-slate-200 text-slate-800 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white transition-all text-[15px] font-medium placeholder:font-normal placeholder:text-slate-400"
+                        value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2.5 text-slate-500">
+                        <button type="button" onClick={generatePassword} className="hover:text-indigo-600 transition-colors p-1"><RotateCw className="w-4 h-4" strokeWidth={2.5} /></button>
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="hover:text-indigo-600 transition-colors p-1">
+                          {showPassword ? <X className="w-4 h-4" strokeWidth={2.5} /> : <Eye className="w-4 h-4" strokeWidth={2.5} />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-               {/* Footer is now fixed at bottom of modal */}
-               <div className="px-8 py-6 bg-white border-t border-slate-100 shrink-0">
-                  <button 
-                    form="create-user-form"
-                    disabled={creating} 
-                    className={`w-full py-4 rounded-[14px] font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:hover:translate-y-0 flex items-center justify-center gap-2 ${isAdmin ? 'bg-indigo-500 shadow-indigo-500/30' : 'bg-blue-500 shadow-blue-500/30'}`}
-                  >
-                    {creating ? <Loader2 className="animate-spin w-5 h-5" /> : `Create ${isAdmin ? 'Staff' : 'Candidate'} Account`}
-                  </button>
-               </div>
+                  {!isAdmin && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-[#6b7280] ml-2">Initial Allotted Exam (Optional)</label>
+                      <div className="relative">
+                        <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-500" />
+                        <select
+                          className="w-full pl-[50px] pr-4 py-3.5 bg-slate-100/80 border border-slate-200 text-slate-800 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white transition-all text-[15px] font-medium appearance-none cursor-pointer"
+                          value={newUser.allottedExamId}
+                          onChange={e => setNewUser({ ...newUser, allottedExamId: e.target.value })}
+                        >
+                          <option value="">No exam initially assigned</option>
+                          {exams.map(ex => (
+                            <option key={ex.id} value={ex.id}>{ex.title}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </form>
+              </div>
+
+              {/* Footer is now fixed at bottom of modal */}
+              <div className="px-8 py-6 bg-white border-t border-slate-100 shrink-0">
+                <button
+                  form="create-user-form"
+                  disabled={creating}
+                  className={`w-full py-4 rounded-[14px] font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:hover:translate-y-0 flex items-center justify-center gap-2 ${isAdmin ? 'bg-indigo-500 shadow-indigo-500/30' : 'bg-blue-500 shadow-blue-500/30'}`}
+                >
+                  {creating ? <Loader2 className="animate-spin w-5 h-5" /> : `Create ${isAdmin ? 'Staff' : 'Candidate'} Account`}
+                </button>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -664,7 +739,7 @@ const CreateUserModal = ({ isOpen, onClose, newUser, setNewUser, handleCreateUse
 };
 
 
-const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
+const EditCandidateModal = ({ user, exams, onClose, onSave, onViewBreakdown }) => {
   const [formData, setFormData] = useState({
     full_name: '',
     allotted_exam_ids: [],
@@ -744,7 +819,7 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
     let password = "";
     for (let i = 0; i < 12; i++) {
-        password += chars.charAt(Math.floor(Math.random() * chars.length));
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     setFormData(prev => ({ ...prev, password }));
     setShowPassword(true);
@@ -759,7 +834,7 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
 
   return (
     <AnimatePresence>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 30, scale: 0.98 }}
         className="fixed inset-0 z-[200] bg-slate-900/20 backdrop-blur-2xl overflow-y-auto custom-scrollbar flex flex-col items-center py-6 sm:py-10"
       >
@@ -789,29 +864,29 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                   </div>
                   <div>
                     <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3 ml-2">Full Name</label>
-                    <input 
-                      className="input-premium w-full !bg-white shadow-sm" 
-                      value={formData.full_name} 
-                      onChange={e => setFormData({...formData, full_name: e.target.value})}
+                    <input
+                      className="input-premium w-full !bg-white shadow-sm"
+                      value={formData.full_name}
+                      onChange={e => setFormData({ ...formData, full_name: e.target.value })}
                     />
                   </div>
                 </div>
                 <div className="pt-2">
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3 ml-2">New Password <span className="normal-case opacity-60">(leave blank to keep current)</span></label>
                   <div className="relative">
-                    <input 
-                      className="input-premium w-full !bg-white shadow-sm" 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="Set a new password..." 
+                    <input
+                      className="input-premium w-full !bg-white shadow-sm"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Set a new password..."
                       value={formData.password}
-                      onChange={e => setFormData({...formData, password: e.target.value})}
+                      onChange={e => setFormData({ ...formData, password: e.target.value })}
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-4 text-slate-400">
-                       <button onClick={generatePassword} type="button" className="hover:text-blue-500 transition-colors p-1" title="Generate Random Password"><RotateCw className="w-5 h-5" /></button>
-                       <div className="w-px h-5 bg-slate-200"></div>
-                       <button onClick={() => setShowPassword(!showPassword)} type="button" className="hover:text-blue-500 transition-colors p-1" title="Toggle Visibility">
-                          {showPassword ? <X className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                       </button>
+                      <button onClick={generatePassword} type="button" className="hover:text-blue-500 transition-colors p-1" title="Generate Random Password"><RotateCw className="w-5 h-5" /></button>
+                      <div className="w-px h-5 bg-slate-200"></div>
+                      <button onClick={() => setShowPassword(!showPassword)} type="button" className="hover:text-blue-500 transition-colors p-1" title="Toggle Visibility">
+                        {showPassword ? <X className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -843,85 +918,85 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                 </div>
 
                 <div className="space-y-6 relative">
-                   {/* Search Bar - Advanced Tag Input */}
-                   <div className="flex items-center gap-3">
-                     <div className="flex-1 relative group">
-                       <div className="absolute inset-0 bg-blue-500/5 rounded-[24px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                       <div className={`
+                  {/* Search Bar - Advanced Tag Input */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 relative group">
+                      <div className="absolute inset-0 bg-blue-500/5 rounded-[24px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                      <div className={`
                          relative flex flex-wrap items-center gap-2 min-h-[64px] px-5 py-3 bg-slate-50/50 border-2 border-slate-100 rounded-[24px] transition-all 
                          ${isExamDropdownOpen ? 'border-blue-400 bg-white shadow-lg ring-4 ring-blue-500/5' : 'hover:border-slate-200'}
                        `}>
-                         <Search className="w-5 h-5 text-slate-400 shrink-0" />
-                         
-                         {/* Tags inside search bar */}
-                         <AnimatePresence>
-                           {formData.allotted_exam_ids.map(examId => {
-                             const exam = exams.find(e => e.id === examId);
-                             if (!exam) return null;
-                             return (
-                               <motion.div 
-                                 key={examId}
-                                 initial={{ opacity: 0, scale: 0.8 }}
-                                 animate={{ opacity: 1, scale: 1 }}
-                                 exit={{ opacity: 0, scale: 0.8 }}
-                                 className="bg-blue-600 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-md shadow-blue-600/20"
-                               >
-                                 <span className="text-[11px] font-black uppercase tracking-wider">{exam.title}</span>
-                                 <button 
-                                   onClick={() => toggleExam(examId)}
-                                   className="hover:bg-white/20 rounded-md p-0.5 transition-colors"
-                                 >
-                                   <X className="w-3 h-3" />
-                                 </button>
-                               </motion.div>
-                             );
-                           })}
-                         </AnimatePresence>
+                        <Search className="w-5 h-5 text-slate-400 shrink-0" />
 
-                         <input 
-                           type="text"
-                           placeholder={formData.allotted_exam_ids.length === 0 ? "Search and assign examinations..." : ""}
-                           className="flex-1 min-w-[120px] bg-transparent text-[15px] font-bold text-slate-800 focus:outline-none placeholder:font-medium placeholder:text-slate-400"
-                           value={examSearch}
-                           onChange={(e) => {
-                             setExamSearch(e.target.value);
-                             setIsExamDropdownOpen(true);
-                           }}
-                           onFocus={() => setIsExamDropdownOpen(true)}
-                         />
-                         
-                         {examSearch && (
-                           <button 
-                             onClick={() => setExamSearch('')}
-                             className="p-1 hover:bg-slate-100 rounded-full transition-colors shrink-0"
-                           >
-                             <X className="w-4 h-4 text-slate-400" />
-                           </button>
-                         )}
-                       </div>
+                        {/* Tags inside search bar */}
+                        <AnimatePresence>
+                          {formData.allotted_exam_ids.map(examId => {
+                            const exam = exams.find(e => e.id === examId);
+                            if (!exam) return null;
+                            return (
+                              <motion.div
+                                key={examId}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                className="bg-blue-600 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-md shadow-blue-600/20"
+                              >
+                                <span className="text-[11px] font-black uppercase tracking-wider">{exam.title}</span>
+                                <button
+                                  onClick={() => toggleExam(examId)}
+                                  className="hover:bg-white/20 rounded-md p-0.5 transition-colors"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
 
-                       {/* Dropdown Results */}
-                       <AnimatePresence>
-                         {isExamDropdownOpen && (
-                           <>
-                             <div className="fixed inset-0 z-[10]" onClick={() => setIsExamDropdownOpen(false)} />
-                             <motion.div 
-                               initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                               animate={{ opacity: 1, y: 0, scale: 1 }}
-                               exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                               className="absolute left-0 right-0 top-full mt-3 bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden z-[100] max-h-[320px] flex flex-col"
-                             >
-                               <div className="p-4 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
-                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Available Exams</span>
-                                 <button onClick={() => setIsExamDropdownOpen(false)} className="text-[10px] font-black text-blue-600 uppercase hover:underline">Close</button>
-                               </div>
-                             <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+                        <input
+                          type="text"
+                          placeholder={formData.allotted_exam_ids.length === 0 ? "Search and assign examinations..." : ""}
+                          className="flex-1 min-w-[120px] bg-transparent text-[15px] font-bold text-slate-800 focus:outline-none placeholder:font-medium placeholder:text-slate-400"
+                          value={examSearch}
+                          onChange={(e) => {
+                            setExamSearch(e.target.value);
+                            setIsExamDropdownOpen(true);
+                          }}
+                          onFocus={() => setIsExamDropdownOpen(true)}
+                        />
+
+                        {examSearch && (
+                          <button
+                            onClick={() => setExamSearch('')}
+                            className="p-1 hover:bg-slate-100 rounded-full transition-colors shrink-0"
+                          >
+                            <X className="w-4 h-4 text-slate-400" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Dropdown Results */}
+                      <AnimatePresence>
+                        {isExamDropdownOpen && (
+                          <>
+                            <div className="fixed inset-0 z-[10]" onClick={() => setIsExamDropdownOpen(false)} />
+                            <motion.div
+                              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                              className="absolute left-0 right-0 top-full mt-3 bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden z-[100] max-h-[320px] flex flex-col"
+                            >
+                              <div className="p-4 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Available Exams</span>
+                                <button onClick={() => setIsExamDropdownOpen(false)} className="text-[10px] font-black text-blue-600 uppercase hover:underline">Close</button>
+                              </div>
+                              <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
                                 {exams
                                   .filter(ex => ex.title.toLowerCase().includes(examSearch.toLowerCase()))
                                   .map(exam => {
                                     const isSelected = formData.allotted_exam_ids.includes(exam.id);
                                     return (
-                                      <div 
+                                      <div
                                         key={exam.id}
                                         className={`w-full p-3 rounded-2xl flex items-center justify-between group/item transition-all ${isSelected ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
                                       >
@@ -934,16 +1009,16 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                                             <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-0.5">{exam.duration} Minutes</div>
                                           </div>
                                         </div>
-                                        
+
                                         {isSelected ? (
-                                          <button 
+                                          <button
                                             onClick={() => toggleExam(exam.id)}
                                             className="px-4 py-2 bg-white text-rose-500 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-2"
                                           >
                                             <X className="w-3 h-3" /> Remove
                                           </button>
                                         ) : (
-                                          <button 
+                                          <button
                                             onClick={() => toggleExam(exam.id)}
                                             className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2"
                                           >
@@ -959,96 +1034,96 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                                     <span className="text-sm font-bold text-slate-400">No exams matching "{examSearch}"</span>
                                   </div>
                                 )}
-                             </div>
-                           </motion.div>
-                         </>
-                       )}
-                     </AnimatePresence>
-                   </div>
-                   
-                   {/* OK Final Check Button */}
-                   <button 
-                     onClick={() => {
+                              </div>
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* OK Final Check Button */}
+                    <button
+                      onClick={() => {
                         setIsExamDropdownOpen(false);
                         setExamSearch('');
-                     }}
-                     className="h-[64px] px-8 bg-emerald-500 text-white rounded-[24px] font-black text-[12px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2"
-                   >
-                     <CheckCircle className="w-5 h-5" /> OK
-                   </button>
-                   </div>
+                      }}
+                      className="h-[64px] px-8 bg-emerald-500 text-white rounded-[24px] font-black text-[12px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2"
+                    >
+                      <CheckCircle className="w-5 h-5" /> OK
+                    </button>
+                  </div>
 
-                   {/* Selected Exams Permission List - COMPACT VERSION */}
-                   <div className="space-y-2">
-                      <div className="px-4 py-1.5 border-b border-slate-100 flex justify-between items-center">
-                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Current Allotments</span>
-                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Attempt Status</span>
-                      </div>
-                      <div className="grid grid-cols-1 gap-2">
-                        <AnimatePresence>
-                          {formData.allotted_exam_ids.map(examId => {
-                            const exam = exams.find(e => e.id === examId);
-                            if (!exam) return null;
-                            
-                            const attempt = submissions.find(s => s.exam_id === examId);
-                            const isAttempted = !!attempt;
+                  {/* Selected Exams Permission List - COMPACT VERSION */}
+                  <div className="space-y-2">
+                    <div className="px-4 py-1.5 border-b border-slate-100 flex justify-between items-center">
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Current Allotments</span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Attempt Status</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <AnimatePresence>
+                        {formData.allotted_exam_ids.map(examId => {
+                          const exam = exams.find(e => e.id === examId);
+                          if (!exam) return null;
 
-                            return (
-                              <motion.div 
-                                key={examId}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 10 }}
-                                className="bg-white border border-slate-100 px-4 py-3 rounded-xl flex items-center justify-between group hover:shadow-sm transition-all"
-                              >
-                                <div className="flex items-center gap-3">
-                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${isAttempted ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                                      <Shield className="w-4 h-4" />
-                                   </div>
-                                   <div>
-                                      <h5 className="font-bold text-slate-800 text-[13px] leading-tight">{exam.title}</h5>
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Auth Access</p>
-                                        <div className="w-1 h-1 bg-slate-300 rounded-full" />
-                                        <span className={`text-[9px] font-black uppercase tracking-widest ${isAttempted ? 'text-emerald-500' : 'text-slate-400'}`}>
-                                          {isAttempted ? 'Attempted' : 'Not Attempted'}
-                                        </span>
-                                      </div>
-                                   </div>
+                          const attempt = submissions.find(s => s.exam_id === examId);
+                          const isAttempted = !!attempt;
+
+                          return (
+                            <motion.div
+                              key={examId}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 10 }}
+                              className="bg-white border border-slate-100 px-4 py-3 rounded-xl flex items-center justify-between group hover:shadow-sm transition-all"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${isAttempted ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                                  <Shield className="w-4 h-4" />
                                 </div>
-                                <div className="flex items-center gap-4">
-                                  {isAttempted && (
-                                    <div className="px-2.5 py-1 bg-emerald-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-md shadow-sm">
-                                      {attempt.score} / {attempt.total_questions}
-                                    </div>
-                                  )}
-                                  <button 
-                                    onClick={() => toggleExam(examId)}
-                                    className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all border border-transparent hover:border-rose-100"
-                                    title="Revoke Permission"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                <div>
+                                  <h5 className="font-bold text-slate-800 text-[13px] leading-tight">{exam.title}</h5>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Auth Access</p>
+                                    <div className="w-1 h-1 bg-slate-300 rounded-full" />
+                                    <span className={`text-[9px] font-black uppercase tracking-widest ${isAttempted ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                      {isAttempted ? 'Attempted' : 'Not Attempted'}
+                                    </span>
+                                  </div>
                                 </div>
-                              </motion.div>
-                            );
-                          })}
-                        </AnimatePresence>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                {isAttempted && (
+                                  <div className="px-2.5 py-1 bg-emerald-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-md shadow-sm">
+                                    {attempt.score} / {attempt.total_questions}
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => toggleExam(examId)}
+                                  className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all border border-transparent hover:border-rose-100"
+                                  title="Revoke Permission"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                    {formData.allotted_exam_ids.length === 0 && (
+                      <div className="w-full p-10 bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center gap-3">
+                        <Shield className="w-6 h-6 text-slate-200" />
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Active Allotments</span>
                       </div>
-                      {formData.allotted_exam_ids.length === 0 && (
-                        <div className="w-full p-10 bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center gap-3">
-                           <Shield className="w-6 h-6 text-slate-200" />
-                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Active Allotments</span>
-                        </div>
-                      )}
-                   </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Performance & Mark Release */}
               <div>
                 <h3 className="text-2xl font-black text-slate-800 mb-8 mt-12">Performance & Mark Release</h3>
-                
+
                 {loadingSubs ? (
                   <div className="bg-slate-50 p-10 flex flex-col items-center justify-center gap-4 rounded-3xl border border-slate-100">
                     <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -1063,80 +1138,83 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
                     {submissions.map(sub => {
                       const currentScore = getSubValue(sub, 'admin_score_override') ?? sub.score;
                       const isCurrentlyReleased = getSubValue(sub, 'is_released');
-                      const hasChanges = (getSubValue(sub, 'admin_score_override') !== sub.score && getSubValue(sub, 'admin_score_override') !== undefined) || 
-                                        (getSubValue(sub, 'is_released') !== sub.is_released);
+                      const hasChanges = (getSubValue(sub, 'admin_score_override') !== sub.score && getSubValue(sub, 'admin_score_override') !== undefined) ||
+                        (getSubValue(sub, 'is_released') !== sub.is_released);
 
                       return (
                         <div key={sub.id} className="bg-white p-8 rounded-3xl border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
                           <div className="flex items-center gap-5">
                             <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
-                               <CheckCircle className="w-6 h-6" />
+                              <CheckCircle className="w-6 h-6" />
                             </div>
                             <div>
-                               <div className="flex items-center gap-3 mb-1">
-                                 <h4 className="font-black text-xl text-slate-800 leading-none">{sub.exams?.title || 'Examination'}</h4>
-                                 {hasChanges && <span className="px-2 py-0.5 bg-amber-100 text-amber-600 text-[10px] font-black uppercase rounded shadow-sm">PENDING SAVE</span>}
-                               </div>
-                               <p className="text-xs text-slate-500 font-medium tracking-tight">
-                                  Original System Score: <strong className="text-slate-800">{sub.score} / {sub.total_questions}</strong>
-                               </p>
+                              <div className="flex items-center gap-3 mb-1">
+                                <h4 className="font-black text-xl text-slate-800 leading-none">{sub.exams?.title || 'Examination'}</h4>
+                                {hasChanges && <span className="px-2 py-0.5 bg-amber-100 text-amber-600 text-[10px] font-black uppercase rounded shadow-sm">PENDING SAVE</span>}
+                              </div>
+                              <p className="text-xs text-slate-500 font-medium tracking-tight">
+                                Original System Score: <strong className="text-slate-800">{sub.score} / {sub.total_questions}</strong>
+                              </p>
                             </div>
                           </div>
 
                           <div className="flex flex-col sm:flex-row items-center gap-6 md:pl-8 md:border-l border-slate-100 w-full md:w-auto">
                             <div className="flex flex-col items-center">
-                               <div className="flex items-center gap-6 mb-2">
-                                  <div className="text-center">
-                                     <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 block mb-1">FINAL MARKS</label>
-                                     <div className="flex items-center bg-slate-50 rounded-full border-2 border-slate-100 p-1 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400/50 transition-all">
-                                       <button onClick={() => handleAdjustMark(sub, -1)} className="w-8 h-8 rounded-full hover:bg-white hover:text-blue-600 hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-black text-lg">-</button>
-                                       <input 
-                                         type="number" 
-                                         className="w-16 text-center bg-transparent font-black text-xl text-slate-800 focus:outline-none placeholder:text-slate-300"
-                                         placeholder="0"
-                                         value={currentScore === 0 ? '0' : (currentScore || '')}
-                                         onChange={(e) => {
-                                           const val = e.target.value;
-                                           if (val === '') {
-                                             updateSubChange(sub.id, 'admin_score_override', 0);
-                                           } else {
-                                             const num = parseInt(val);
-                                             if (!isNaN(num)) {
-                                               updateSubChange(sub.id, 'admin_score_override', Math.max(0, Math.min(sub.total_questions, num)));
-                                             }
-                                           }
-                                         }}
-                                       />
-                                       <button onClick={() => handleAdjustMark(sub, 1)} className="w-8 h-8 rounded-full hover:bg-white hover:text-blue-600 hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-black text-lg">+</button>
-                                     </div>
+                              <div className="flex items-center gap-6 mb-2">
+                                <div className="text-center">
+                                  <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 block mb-1">FINAL MARKS</label>
+                                  <div className="flex items-center bg-slate-50 rounded-full border-2 border-slate-100 p-1 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400/50 transition-all">
+                                    <button onClick={() => handleAdjustMark(sub, -1)} className="w-8 h-8 rounded-full hover:bg-white hover:text-blue-600 hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-black text-lg">-</button>
+                                    <input
+                                      type="number"
+                                      className="w-16 text-center bg-transparent font-black text-xl text-slate-800 focus:outline-none placeholder:text-slate-300"
+                                      placeholder="0"
+                                      value={currentScore === 0 ? '0' : (currentScore || '')}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '') {
+                                          updateSubChange(sub.id, 'admin_score_override', 0);
+                                        } else {
+                                          const num = parseInt(val);
+                                          if (!isNaN(num)) {
+                                            updateSubChange(sub.id, 'admin_score_override', Math.max(0, Math.min(sub.total_questions, num)));
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    <button onClick={() => handleAdjustMark(sub, 1)} className="w-8 h-8 rounded-full hover:bg-white hover:text-blue-600 hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-black text-lg">+</button>
                                   </div>
-                                  {hasChanges && (
-                                    <button onClick={() => {
-                                      updateSubChange(sub.id, 'admin_score_override', sub.score);
-                                      updateSubChange(sub.id, 'is_released', sub.is_released);
-                                    }} className="text-[10px] font-black uppercase tracking-widest text-[#94a3b8] hover:text-blue-500 transition-all mt-2 underline underline-offset-4">Reset Changes</button>
-                                  )}
-                               </div>
+                                </div>
+                                {hasChanges && (
+                                  <button onClick={() => {
+                                    updateSubChange(sub.id, 'admin_score_override', sub.score);
+                                    updateSubChange(sub.id, 'is_released', sub.is_released);
+                                  }} className="text-[10px] font-black uppercase tracking-widest text-[#94a3b8] hover:text-blue-500 transition-all mt-2 underline underline-offset-4">Reset Changes</button>
+                                )}
+                              </div>
                             </div>
-                            
+
                             <div className="flex flex-col gap-2 w-full sm:w-80">
-                               <button className="px-6 py-3 bg-white hover:bg-slate-50 text-slate-600 font-bold rounded-2xl border border-slate-200 transition-all text-xs flex items-center justify-center gap-2 group">
-                                  <Eye className="w-4 h-4 group-hover:text-blue-500 transition-colors" /> Question Breakdowns
-                               </button>
-                               <button 
-                                 onClick={() => updateSubChange(sub.id, 'is_released', !isCurrentlyReleased)}
-                                 className={`px-6 py-3 font-black rounded-2xl transition-all text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 ${
-                                   isCurrentlyReleased 
-                                     ? 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600 ring-2 ring-emerald-500/20' 
-                                     : 'bg-slate-900 text-white shadow-slate-900/30 hover:bg-slate-800'
-                                 }`}
-                               >
-                                  {isCurrentlyReleased ? (
-                                    <><CheckCircle className="w-4 h-4" /> Result Live</>
-                                  ) : (
-                                    <><Send className="w-4 h-4" /> Publish Result</>
-                                  )}
-                               </button>
+                              <button 
+                                type="button"
+                                onClick={() => onViewBreakdown(sub)}
+                                className="px-6 py-3 bg-white hover:bg-slate-50 text-slate-600 font-bold rounded-2xl border border-slate-200 transition-all text-xs flex items-center justify-center gap-2 group"
+                              >
+                                <Eye className="w-4 h-4 group-hover:text-blue-500 transition-colors" /> Question Breakdowns
+                              </button>
+                              <button
+                                onClick={() => updateSubChange(sub.id, 'is_released', !isCurrentlyReleased)}
+                                className={`px-6 py-3 font-black rounded-2xl transition-all text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 ${isCurrentlyReleased
+                                    ? 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600 ring-2 ring-emerald-500/20'
+                                    : 'bg-slate-900 text-white shadow-slate-900/30 hover:bg-slate-800'
+                                  }`}
+                              >
+                                {isCurrentlyReleased ? (
+                                  <><CheckCircle className="w-4 h-4" /> Result Live</>
+                                ) : (
+                                  <><Send className="w-4 h-4" /> Publish Result</>
+                                )}
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -1148,10 +1226,10 @@ const EditCandidateModal = ({ user, exams, onClose, onSave }) => {
 
             </div>
 
-             <div className="mt-16 pt-10 border-t border-slate-100 flex justify-center relative z-10">
-               <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 px-14 rounded-full shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-1 text-lg">
-                  Save Profile Changes
-               </button>
+            <div className="mt-16 pt-10 border-t border-slate-100 flex justify-center relative z-10">
+              <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 px-14 rounded-full shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-1 text-lg">
+                Save Profile Changes
+              </button>
             </div>
           </div>
         </div>
@@ -1167,7 +1245,7 @@ const VerificationCard = ({ label, url, onView }) => (
       {url ? (
         <img src={url} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
       ) : (
-         <Shield className="w-8 h-8 text-slate-700" />
+        <Shield className="w-8 h-8 text-slate-700" />
       )}
       {url && (
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -1184,12 +1262,12 @@ const DeleteConfirmModal = ({ user, onClose, onConfirm }) => {
     <AnimatePresence>
       {user && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             onClick={onClose}
           />
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
             className="bg-white max-w-sm w-full p-8 rounded-[2rem] shadow-2xl relative z-10 text-center"
           >
@@ -1198,7 +1276,7 @@ const DeleteConfirmModal = ({ user, onClose, onConfirm }) => {
             </div>
             <h3 className="text-2xl font-black text-slate-800 mb-2">Delete User?</h3>
             <p className="text-slate-500 text-sm mb-8">Are you sure you want to remove <strong className="text-slate-800">{user.full_name || user.email}</strong>? This action cannot be undone.</p>
-            
+
             <div className="flex gap-4">
               <button onClick={onClose} className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">Cancel</button>
               <button onClick={onConfirm} className="flex-1 py-3 bg-rose-500 text-white font-bold rounded-xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-colors">Delete</button>
@@ -1211,12 +1289,12 @@ const DeleteConfirmModal = ({ user, onClose, onConfirm }) => {
 }
 
 // Side Drawer Modal for robust View Profile
-const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
+const ViewCandidateDrawer = ({ user, onClose, onViewDoc, onViewBreakdown }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
 
   const { profile } = useAuth();
-  const isSuperAdmin = profile?.email === 'admin@pmi.com';
+  const isSuperAdmin = profile?.role === 'super_admin' || profile?.email === 'kabirhaldar4444@gmail.com' || profile?.email === 'admin@pmi.com';
 
   useEffect(() => {
     if (user) {
@@ -1268,12 +1346,12 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
     <AnimatePresence>
       {user && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={onClose}
           />
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
             className="bg-slate-50 w-full max-w-4xl max-h-[90vh] shadow-2xl relative z-10 flex flex-col overflow-hidden rounded-[2rem] border border-white"
           >
@@ -1296,46 +1374,46 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 custom-scrollbar">
-              
+
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Personal Details Card */}
                 <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full text-xs font-bold tracking-wider uppercase text-slate-600 mb-6 border border-slate-200">
-                      <User className="w-3.5 h-3.5" /> PERSONAL DETAILS
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full text-xs font-bold tracking-wider uppercase text-slate-600 mb-6 border border-slate-200">
+                    <User className="w-3.5 h-3.5" /> PERSONAL DETAILS
+                  </div>
+
+                  <h3 className="text-2xl font-black text-slate-800 mb-6">{user.full_name || '--'}</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 text-blue-500 font-medium">
+                      <Mail className="w-4 h-4" /> {user.email}
                     </div>
-                    
-                    <h3 className="text-2xl font-black text-slate-800 mb-6">{user.full_name || '--'}</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 text-blue-500 font-medium">
-                        <Mail className="w-4 h-4" /> {user.email}
-                      </div>
-                      <div className="flex items-center gap-3 text-slate-600 font-medium">
-                        <Phone className="w-4 h-4" /> {maskPhone(user.phone)}
-                      </div>
-                      <div className="flex items-center gap-3 text-slate-600 font-medium">
-                        <MapPin className="w-4 h-4" /> {maskAddress(user.address)}
-                      </div>
+                    <div className="flex items-center gap-3 text-slate-600 font-medium">
+                      <Phone className="w-4 h-4" /> {maskPhone(user.phone)}
                     </div>
+                    <div className="flex items-center gap-3 text-slate-600 font-medium">
+                      <MapPin className="w-4 h-4" /> {maskAddress(user.address)}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Verification Metadata Card */}
                 <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full text-xs font-bold tracking-wider uppercase text-slate-600 mb-6 border border-slate-200">
-                      <Shield className="w-3.5 h-3.5" /> VERIFICATION
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full text-xs font-bold tracking-wider uppercase text-slate-600 mb-6 border border-slate-200">
+                    <Shield className="w-3.5 h-3.5" /> VERIFICATION
+                  </div>
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Registration IP</p>
+                      <p className="text-slate-800 font-mono font-bold text-sm bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 inline-block">{maskIP(user.ip_address)}</p>
                     </div>
-                    <div className="space-y-6">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Registration IP</p>
-                        <p className="text-slate-800 font-mono font-bold text-sm bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 inline-block">{maskIP(user.ip_address)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">KYC Status</p>
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${user.profile_completed ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
-                          {user.profile_completed ? <CheckCircle className="w-3 h-3" /> : <RotateCw className="w-3 h-3" />}
-                          {user.profile_completed ? 'COMPLETED' : 'INCOMPLETE'}
-                        </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">KYC Status</p>
+                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${user.profile_completed ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                        {user.profile_completed ? <CheckCircle className="w-3 h-3" /> : <RotateCw className="w-3 h-3" />}
+                        {user.profile_completed ? 'COMPLETED' : 'INCOMPLETE'}
                       </div>
                     </div>
+                  </div>
                 </div>
               </div>
 
@@ -1345,20 +1423,20 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
                   <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><FileText className="w-5 h-5" /></div>
                   <h3 className="text-2xl font-black text-slate-800">Documents</h3>
                 </div>
-                
-                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <DocumentWidget label="Live Photo" url={user.profile_photo_url} onView={() => onViewDoc({ label: "Live Photo", url: user.profile_photo_url })} />
-                    <DocumentWidget label="Aadhar Front" url={user.aadhaar_front_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Aadhar Front", url: user.aadhaar_front_url })} />
-                    <DocumentWidget label="Aadhar Back" url={user.aadhaar_back_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Aadhar Back", url: user.aadhaar_back_url })} />
-                    <DocumentWidget label="PAN Card" url={user.pan_card_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "PAN Card", url: user.pan_card_url })} />
-                    <DocumentWidget label="Signature" url={user.signature_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Signature Scan", url: user.signature_url })} />
+
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <DocumentWidget label="Live Photo" url={user.profile_photo_url} onView={() => onViewDoc({ label: "Live Photo", url: user.profile_photo_url })} />
+                  <DocumentWidget label="Aadhar Front" url={user.aadhaar_front_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Aadhar Front", url: user.aadhaar_front_url })} />
+                  <DocumentWidget label="Aadhar Back" url={user.aadhaar_back_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Aadhar Back", url: user.aadhaar_back_url })} />
+                  <DocumentWidget label="PAN Card" url={user.pan_card_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "PAN Card", url: user.pan_card_url })} />
+                  <DocumentWidget label="Signature" url={user.signature_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Signature Scan", url: user.signature_url })} />
                 </div>
               </div>
 
               {/* Exam Results Section */}
               <div>
                 <h3 className="text-2xl font-black text-slate-800 mb-6 mt-12">Exam Results</h3>
-                
+
                 {loadingSubs ? (
                   <div className="p-10 text-center text-slate-400 bg-white rounded-3xl border border-slate-100 flex flex-col items-center gap-3">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
@@ -1371,7 +1449,11 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc }) => {
                 ) : (
                   <div className="space-y-4">
                     {submissions.map(sub => (
-                      <MockResultCard key={sub.id} submission={sub} />
+                      <MockResultCard 
+                        key={sub.id} 
+                        submission={sub} 
+                        onViewBreakdown={() => onViewBreakdown(sub)} 
+                      />
                     ))}
                   </div>
                 )}
@@ -1396,12 +1478,12 @@ const DocumentViewerOverlay = ({ doc, onClose }) => {
     <AnimatePresence>
       {doc && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
             onClick={onClose}
           />
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="bg-slate-900 p-2 rounded-3xl shadow-2xl relative z-10 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
           >
@@ -1412,11 +1494,11 @@ const DocumentViewerOverlay = ({ doc, onClose }) => {
               </button>
             </div>
             <div className="flex-1 overflow-auto rounded-2xl bg-black/50 m-2 flex justify-center items-center">
-               <img src={doc.url} alt={doc.label} className="max-w-full max-h-full object-contain p-2" />
+              <img src={doc.url} alt={doc.label} className="max-w-full max-h-full object-contain p-2" />
             </div>
             <div className="p-4 flex justify-end border-t border-white/10 shrink-0">
               <a href={doc.url} download target="_blank" rel="noreferrer" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors flex items-center gap-2 text-sm">
-                 <Download className="w-4 h-4" /> Open Original
+                <Download className="w-4 h-4" /> Open Original
               </a>
             </div>
           </motion.div>
@@ -1431,16 +1513,15 @@ const DocumentWidget = ({ label, url, onView, restricted }) => (
     <div className="flex flex-col gap-4">
       {/* Header Row */}
       <div className="flex items-center justify-between">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 ${
-          restricted 
-            ? 'bg-amber-50 border-amber-100/50 text-amber-500' 
-            : url 
-              ? 'bg-blue-50 border-blue-100/50 text-blue-600' 
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 ${restricted
+            ? 'bg-amber-50 border-amber-100/50 text-amber-500'
+            : url
+              ? 'bg-blue-50 border-blue-100/50 text-blue-600'
               : 'bg-slate-50 border-slate-100 text-slate-300'
-        }`}>
-           {restricted ? <ShieldAlert className="w-5 h-5" /> : (url ? <FileText className="w-5 h-5" /> : <X className="w-5 h-5" />)}
+          }`}>
+          {restricted ? <ShieldAlert className="w-5 h-5" /> : (url ? <FileText className="w-5 h-5" /> : <X className="w-5 h-5" />)}
         </div>
-        
+
         {restricted ? (
           <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50/50 text-amber-600 text-[8px] font-black uppercase tracking-[0.15em] rounded-lg border border-amber-100/50">
             <Lock className="w-2.5 h-2.5" /> Restricted
@@ -1467,8 +1548,8 @@ const DocumentWidget = ({ label, url, onView, restricted }) => (
       {/* Button only for non-restricted uploaded docs - SMALL VERSION */}
       {!restricted && url && (
         <div className="pt-2">
-          <button 
-            onClick={onView} 
+          <button
+            onClick={onView}
             className="px-5 py-2 bg-slate-900 hover:bg-blue-600 text-white rounded-lg transition-all font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10 hover:shadow-blue-500/20 active:scale-[0.98]"
           >
             <Eye className="w-3 h-3" /> View Document
@@ -1480,7 +1561,7 @@ const DocumentWidget = ({ label, url, onView, restricted }) => (
 );
 
 // UI Only Match to the exact design provided by screenshots for Results
-const MockResultCard = ({ submission }) => {
+const MockResultCard = ({ submission, onViewBreakdown }) => {
   return (
     <div className="bg-white p-6 rounded-3xl border border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
       <div className="flex items-center gap-4">
@@ -1490,22 +1571,26 @@ const MockResultCard = ({ submission }) => {
         <div>
           <h4 className="font-black text-lg text-slate-800 leading-tight">{submission.exams?.title || 'Unknown Exam'}</h4>
           <p className="text-sm text-slate-500 font-medium mt-1">
-             Original System Score: <strong className="text-slate-800">{submission.score} / {submission.total_questions}</strong>
+            Original System Score: <strong className="text-slate-800">{submission.score} / {submission.total_questions}</strong>
           </p>
         </div>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 md:pl-6 md:border-l border-slate-100 w-full md:w-auto">
         <div className="flex flex-col items-center">
-           <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-2">FINAL MARKS</label>
-           <div className="flex items-center bg-white rounded-full border-2 border-slate-100 shadow-inner p-1">
-             <button className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">-</button>
-             <span className="w-12 text-center font-black text-xl text-slate-800">{submission.admin_score_override ?? submission.score}</span>
-             <button className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">+</button>
-           </div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-2">FINAL MARKS</label>
+          <div className="flex items-center bg-white rounded-full border-2 border-slate-100 shadow-inner p-1">
+            <button className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">-</button>
+            <span className="w-12 text-center font-black text-xl text-slate-800">{submission.admin_score_override ?? submission.score}</span>
+            <button className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">+</button>
+          </div>
         </div>
         <div className="flex flex-col gap-2 w-full sm:w-auto">
-          <button className="px-6 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-xl border border-blue-200 transition-colors text-sm flex items-center justify-center gap-2">
+          <button 
+            type="button"
+            onClick={onViewBreakdown}
+            className="px-6 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-xl border border-blue-200 transition-colors text-sm flex items-center justify-center gap-2"
+          >
             <Eye className="w-4 h-4" /> Question Breakdowns
           </button>
           <button className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-colors text-sm flex items-center justify-center gap-2">
@@ -1514,6 +1599,133 @@ const MockResultCard = ({ submission }) => {
         </div>
       </div>
     </div>
+  );
+};
+
+// Question Breakdown Viewer Component
+const QuestionBreakdownModal = ({ isOpen, onClose, submission, questions, loading }) => {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 sm:p-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="bg-white max-w-2xl w-full rounded-[2rem] shadow-2xl relative z-10 flex flex-col overflow-hidden max-h-[85vh] border border-slate-100"
+          >
+            {/* Header */}
+            <div className="p-6 bg-gradient-to-r from-blue-600 to-indigo-600 flex justify-between items-start shrink-0">
+              <div className="flex gap-3 items-center">
+                <div className="bg-white/20 p-2.5 rounded-[10px] backdrop-blur-md">
+                  <Eye className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg leading-tight">Question Breakdown</h3>
+                  <p className="text-white/80 text-[11px] font-medium mt-0.5">
+                    {submission?.exams?.title || 'Exam Assessment'}
+                  </p>
+                </div>
+              </div>
+              <button onClick={onClose} className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors flex shrink-0 mt-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-50 space-y-4">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                  <span className="font-bold text-xs uppercase tracking-wider">Loading assessment data...</span>
+                </div>
+              ) : questions.length === 0 ? (
+                <div className="text-center text-slate-400 py-10 font-medium">
+                  No questions found for this examination.
+                </div>
+              ) : (
+                questions.map((q, idx) => {
+                  const candidateAnswerIdx = submission?.answers?.[idx];
+                  const isCorrect = candidateAnswerIdx === q.correct_option;
+                  const isNotAttempted = candidateAnswerIdx === undefined || candidateAnswerIdx === null;
+
+                  return (
+                    <div key={q.id} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-3">
+                      <div className="flex items-start gap-3 justify-between">
+                        <div className="flex gap-2.5 items-start">
+                          <span className="bg-slate-100 text-slate-800 text-xs font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                            {idx + 1}
+                          </span>
+                          <h4 className="font-bold text-slate-800 text-sm md:text-base leading-snug">
+                            {q.question_text}
+                          </h4>
+                        </div>
+
+                        {isNotAttempted ? (
+                          <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-widest rounded-full shrink-0 border border-slate-200">
+                            Unattempted
+                          </span>
+                        ) : isCorrect ? (
+                          <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest rounded-full shrink-0 border border-emerald-100">
+                            Correct
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 bg-rose-50 text-rose-600 text-[9px] font-black uppercase tracking-widest rounded-full shrink-0 border border-rose-100">
+                            Incorrect
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-8">
+                        {q.options.map((option, optIdx) => {
+                          const isOptionCorrect = optIdx === q.correct_option;
+                          const isOptionSelected = optIdx === candidateAnswerIdx;
+
+                          let optionStyle = "border-slate-100 bg-slate-50/50 text-slate-600";
+                          let badge = null;
+
+                          if (isOptionCorrect) {
+                            optionStyle = "border-emerald-200 bg-emerald-50 text-emerald-800 font-bold";
+                            badge = <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 ml-auto">Correct Choice</span>;
+                          } else if (isOptionSelected && !isCorrect) {
+                            optionStyle = "border-rose-200 bg-rose-50 text-rose-800 font-bold";
+                            badge = <span className="text-[8px] font-black uppercase tracking-widest text-rose-600 ml-auto">Your Choice</span>;
+                          }
+
+                          return (
+                            <div key={optIdx} className={`p-3 border rounded-xl flex items-center gap-3 text-xs transition-all ${optionStyle}`}>
+                              <span className={`w-5 h-5 rounded flex items-center justify-center font-black text-xs shrink-0 ${isOptionCorrect ? 'bg-emerald-500 text-white' : isOptionSelected ? 'bg-rose-500 text-white' : 'bg-white border text-slate-400'}`}>
+                                {String.fromCharCode(65 + optIdx)}
+                              </span>
+                              <span>{option}</span>
+                              {badge}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-white border-t border-slate-100 flex justify-end shrink-0">
+              <button onClick={onClose} className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-colors">
+                Close Breakdown
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
 
