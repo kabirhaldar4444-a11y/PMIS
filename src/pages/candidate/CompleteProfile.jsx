@@ -3,14 +3,14 @@ import { supabase } from '../../utils/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  User, 
-  Phone, 
-  MapPin, 
-  Upload, 
-  Camera, 
-  ChevronDown, 
-  ArrowRight, 
+import {
+  User,
+  Phone,
+  MapPin,
+  Upload,
+  Camera,
+  ChevronDown,
+  ArrowRight,
   Loader2,
   CheckCircle,
   Video,
@@ -45,7 +45,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, disabled })
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
-      <div 
+      <div
         className={`input-premium w-full flex items-center justify-between cursor-pointer transition-all duration-200 ${disabled ? 'opacity-50 pointer-events-none bg-slate-50' : 'bg-white hover:border-primary-500/50 focus-within:ring-2 focus-within:ring-primary-500/50'}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
@@ -55,7 +55,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, disabled })
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -64,9 +64,9 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, disabled })
           >
             <div className="p-2 border-b border-slate-100 flex items-center gap-2">
               <Search className="w-4 h-4 text-slate-400 ml-2" />
-              <input 
+              <input
                 autoFocus
-                placeholder="Search..." 
+                placeholder="Search..."
                 className="w-full text-sm outline-none py-1"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -74,8 +74,8 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, disabled })
             </div>
             <ul className="max-h-60 overflow-y-auto w-full p-2">
               {filtered.length > 0 ? filtered.map(opt => (
-                <li 
-                  key={opt} 
+                <li
+                  key={opt}
                   className="px-4 py-2 hover:bg-primary-500/5 hover:text-primary-600 rounded-xl cursor-pointer text-sm font-medium transition-colors"
                   onClick={() => {
                     onChange(opt);
@@ -135,11 +135,11 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
         >
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
             className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl max-w-sm w-full relative"
           >
@@ -153,24 +153,24 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
             </div>
 
             <div className="bg-slate-900 aspect-square relative flex items-center justify-center overflow-hidden">
-               {error ? (
-                 <p className="text-amber-500 text-sm px-8 text-center font-medium">{error}</p>
-               ) : (
-                 <>
-                   <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover scale-x-[-1]" />
-                   <div className="absolute inset-0 border-[3px] border-white/20 rounded-full m-10 pointer-events-none" />
-                   <canvas ref={canvasRef} width="400" height="400" className="hidden" />
-                 </>
-               )}
+              {error ? (
+                <p className="text-amber-500 text-sm px-8 text-center font-medium">{error}</p>
+              ) : (
+                <>
+                  <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover scale-x-[-1]" />
+                  <div className="absolute inset-0 border-[3px] border-white/20 rounded-full m-10 pointer-events-none" />
+                  <canvas ref={canvasRef} width="400" height="400" className="hidden" />
+                </>
+              )}
             </div>
 
             <div className="p-8 bg-slate-50/80">
-               <button 
-                 onClick={captureFrame} disabled={!!error}
-                 className="w-full btn-premium !py-5 !rounded-2xl transition-all shadow-xl shadow-primary-500/20"
-               >
-                  Verify Identity
-               </button>
+              <button
+                onClick={captureFrame} disabled={!!error}
+                className="w-full btn-premium !py-5 !rounded-2xl transition-all shadow-xl shadow-primary-500/20"
+              >
+                Verify Identity
+              </button>
             </div>
           </motion.div>
         </motion.div>
@@ -190,7 +190,7 @@ const CompleteProfile = () => {
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState(null); // 'denied' | 'unavailable' | null
   const isGpsDetecting = useRef(false);
-  
+
   const [formData, setFormData] = useState({
     fullName: profile?.full_name || '',
     phone: '',
@@ -209,23 +209,23 @@ const CompleteProfile = () => {
 
   // Smart PIN Code → auto-fill State & City (only when user types manually)
   useEffect(() => {
-    if (isGpsDetecting.current) return; 
-    
+    if (isGpsDetecting.current) return;
+
     const fetchLocationByPincode = async () => {
       const pin = formData.pincode.trim();
       if (pin.length === 6) {
         try {
           const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
           const data = await res.json();
-          
+
           if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice) {
             const postOffice = data[0].PostOffice[0];
             let detectedState = postOffice.State;
-            
+
             // Normalization: The API often returns "Jammu and Kashmir" but sometimes variations exist.
             // We match it against our local dataset keys (case-insensitive and handling & vs and)
             const localStates = Object.keys(indianStatesAndCities);
-            const matchedState = localStates.find(s => 
+            const matchedState = localStates.find(s =>
               s.toLowerCase().replace(/ and /g, ' & ') === detectedState.toLowerCase().replace(/ and /g, ' & ') ||
               s.toLowerCase().replace(/ & /g, ' and ') === detectedState.toLowerCase().replace(/ & /g, ' and ')
             );
@@ -258,8 +258,8 @@ const CompleteProfile = () => {
       setFormData(prev => ({
         ...prev,
         pincode: pincode || prev.pincode,
-        state:   state   || prev.state,
-        city:    city    || prev.city,
+        state: state || prev.state,
+        city: city || prev.city,
         addressLine: address || prev.addressLine
       }));
       showAlert('📍 Location detected successfully!', 'success');
@@ -441,15 +441,16 @@ ${candidateData.photoUrl || 'Not uploaded'}
 ${candidateData.frontUrl || 'Not uploaded'}
 
 • Aadhaar Card (Back):
-${candidateData.backUrl  || 'Not uploaded'}
+${candidateData.backUrl || 'Not uploaded'}
 
 • PAN Card:
-${candidateData.panUrl   || 'Not uploaded'}
+${candidateData.panUrl || 'Not uploaded'}
 
 • Digital Signature:
 ${candidateData.signatureUrl || 'Not uploaded'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Submitted via PMIS Exam Portal
 `
         })
       });
@@ -520,7 +521,7 @@ ${candidateData.signatureUrl || 'Not uploaded'}
   return (
     <>
       <DisclaimerOverlay user={user} profile={profile} />
-      <CameraModal isOpen={isCameraOpen} onClose={() => setIsCameraOpen(false)} onCapture={(file) => setFiles({...files, photo: file})} />
+      <CameraModal isOpen={isCameraOpen} onClose={() => setIsCameraOpen(false)} onCapture={(file) => setFiles({ ...files, photo: file })} />
 
       {/* ── LOCATION PERMISSION MODAL ── */}
       <AnimatePresence>
@@ -600,7 +601,7 @@ ${candidateData.signatureUrl || 'Not uploaded'}
 
       <div className="py-10 px-6 flex flex-col items-center justify-start bg-slate-50/50">
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           className="glass-card-saas max-w-2xl w-full p-8 md:p-14 my-10 relative z-10"
@@ -649,7 +650,7 @@ ${candidateData.signatureUrl || 'Not uploaded'}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Full Name *</label>
-                <input type="text" className="input-premium w-full" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} />
+                <input type="text" className="input-premium w-full" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Phone Number *</label>
@@ -657,13 +658,13 @@ ${candidateData.signatureUrl || 'Not uploaded'}
                   <div className="flex items-center justify-center px-5 bg-slate-100/90 border-r border-slate-200/50 text-slate-800 font-black text-sm tracking-wider">
                     IN +91
                   </div>
-                  <input 
-                    type="tel" 
-                    className="w-full bg-transparent px-5 py-4 outline-none text-slate-800 placeholder:text-slate-400 font-medium" 
-                    placeholder="9876543210" 
+                  <input
+                    type="tel"
+                    className="w-full bg-transparent px-5 py-4 outline-none text-slate-800 placeholder:text-slate-400 font-medium"
+                    placeholder="9876543210"
                     maxLength={10}
-                    value={formData.phone} 
-                    onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
+                    value={formData.phone}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                   />
                 </div>
               </div>
@@ -672,34 +673,34 @@ ${candidateData.signatureUrl || 'Not uploaded'}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">State / UT *</label>
-                <SearchableDropdown value={formData.state} onChange={val => setFormData({...formData, state: val, city: ''})} options={Object.keys(indianStatesAndCities)} placeholder="Search State..." />
+                <SearchableDropdown value={formData.state} onChange={val => setFormData({ ...formData, state: val, city: '' })} options={Object.keys(indianStatesAndCities)} placeholder="Search State..." />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">City *</label>
-                <SearchableDropdown value={formData.city} onChange={val => setFormData({...formData, city: val})} options={formData.state ? indianStatesAndCities[formData.state] : []} placeholder={formData.state ? "Select City..." : "Select State First"} disabled={!formData.state} />
+                <SearchableDropdown value={formData.city} onChange={val => setFormData({ ...formData, city: val })} options={formData.state ? indianStatesAndCities[formData.state] : []} placeholder={formData.state ? "Select City..." : "Select State First"} disabled={!formData.state} />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2 space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Residential Address *</label>
-                <input 
-                  type="text" 
-                  className="input-premium w-full" 
-                  placeholder="House No, Building, Street..." 
-                  value={formData.addressLine} 
-                  onChange={e => setFormData({...formData, addressLine: e.target.value})} 
+                <input
+                  type="text"
+                  className="input-premium w-full"
+                  placeholder="House No, Building, Street..."
+                  value={formData.addressLine}
+                  onChange={e => setFormData({ ...formData, addressLine: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">PIN Code *</label>
-                <input 
-                  type="text" 
-                  className="input-premium w-full" 
-                  placeholder="400001" 
+                <input
+                  type="text"
+                  className="input-premium w-full"
+                  placeholder="400001"
                   maxLength={6}
-                  value={formData.pincode} 
-                  onChange={e => setFormData({...formData, pincode: e.target.value.replace(/\D/g, '')})} 
+                  value={formData.pincode}
+                  onChange={e => setFormData({ ...formData, pincode: e.target.value.replace(/\D/g, '') })}
                 />
               </div>
             </div>
@@ -707,63 +708,63 @@ ${candidateData.signatureUrl || 'Not uploaded'}
             <div className="space-y-4">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Identity Documents (Aadhaar & PAN) *</label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 {/* Aadhaar Front */}
-                 <div className="relative group h-[120px]">
-                    <input type="file" accept="image/*" onChange={e => setFiles({...files, aadhaarFront: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="h-full flex flex-col justify-center items-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm overflow-hidden p-2">
-                       {files.aadhaarFront ? (
-                         <div className="w-full h-full relative">
-                           <img src={URL.createObjectURL(files.aadhaarFront)} className="w-full h-full object-cover rounded-[1.5rem]" />
-                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase tracking-wider rounded-[1.5rem]">
-                             Change Image
-                           </div>
-                         </div>
-                       ) : (
-                         <>
-                           <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
-                           <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">Aadhaar Front</span>
-                         </>
-                       )}
-                    </div>
-                 </div>
-                 {/* Aadhaar Back */}
-                 <div className="relative group h-[120px]">
-                    <input type="file" accept="image/*" onChange={e => setFiles({...files, aadhaarBack: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="h-full flex flex-col justify-center items-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm overflow-hidden p-2">
-                       {files.aadhaarBack ? (
-                         <div className="w-full h-full relative">
-                           <img src={URL.createObjectURL(files.aadhaarBack)} className="w-full h-full object-cover rounded-[1.5rem]" />
-                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase tracking-wider rounded-[1.5rem]">
-                             Change Image
-                           </div>
-                         </div>
-                       ) : (
-                         <>
-                           <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
-                           <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">Aadhaar Back</span>
-                         </>
-                       )}
-                    </div>
-                 </div>
-                 {/* PAN */}
-                 <div className="relative group h-[120px]">
-                    <input type="file" accept="image/*" onChange={e => setFiles({...files, panCard: e.target.files[0]})} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                    <div className="h-full flex flex-col justify-center items-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm overflow-hidden p-2">
-                       {files.panCard ? (
-                         <div className="w-full h-full relative">
-                           <img src={URL.createObjectURL(files.panCard)} className="w-full h-full object-cover rounded-[1.5rem]" />
-                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase tracking-wider rounded-[1.5rem]">
-                             Change Image
-                           </div>
-                         </div>
-                       ) : (
-                         <>
-                           <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
-                           <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">Upload PAN Card</span>
-                         </>
-                       )}
-                    </div>
-                 </div>
+                {/* Aadhaar Front */}
+                <div className="relative group h-[120px]">
+                  <input type="file" accept="image/*" onChange={e => setFiles({ ...files, aadhaarFront: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                  <div className="h-full flex flex-col justify-center items-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm overflow-hidden p-2">
+                    {files.aadhaarFront ? (
+                      <div className="w-full h-full relative">
+                        <img src={URL.createObjectURL(files.aadhaarFront)} className="w-full h-full object-cover rounded-[1.5rem]" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase tracking-wider rounded-[1.5rem]">
+                          Change Image
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">Aadhaar Front</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {/* Aadhaar Back */}
+                <div className="relative group h-[120px]">
+                  <input type="file" accept="image/*" onChange={e => setFiles({ ...files, aadhaarBack: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                  <div className="h-full flex flex-col justify-center items-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm overflow-hidden p-2">
+                    {files.aadhaarBack ? (
+                      <div className="w-full h-full relative">
+                        <img src={URL.createObjectURL(files.aadhaarBack)} className="w-full h-full object-cover rounded-[1.5rem]" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase tracking-wider rounded-[1.5rem]">
+                          Change Image
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">Aadhaar Back</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {/* PAN */}
+                <div className="relative group h-[120px]">
+                  <input type="file" accept="image/*" onChange={e => setFiles({ ...files, panCard: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                  <div className="h-full flex flex-col justify-center items-center border-2 border-dashed border-slate-200 rounded-[2rem] text-center group-hover:border-primary-500 transition-all bg-white shadow-sm overflow-hidden p-2">
+                    {files.panCard ? (
+                      <div className="w-full h-full relative">
+                        <img src={URL.createObjectURL(files.panCard)} className="w-full h-full object-cover rounded-[1.5rem]" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase tracking-wider rounded-[1.5rem]">
+                          Change Image
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <ImageIcon className="mx-auto w-6 h-6 text-slate-400 mb-2" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase line-clamp-1">Upload PAN Card</span>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -776,66 +777,66 @@ ${candidateData.signatureUrl || 'Not uploaded'}
 
             {/* Legal Acknowledgement */}
             <div className="space-y-6 pt-6 border-t border-slate-200/50">
-               <h3 className="text-xl font-outfit font-black text-slate-900 tracking-tight">Legal Acknowledgement</h3>
-               <div className="bg-slate-50/80 border border-slate-100 rounded-3xl p-6 md:p-8 space-y-6 max-h-[300px] overflow-y-auto shadow-inner">
-                 <div className="space-y-2">
-                   <h4 className="text-sm font-bold text-slate-900">1. Identity Verification and Authentication</h4>
-                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                     To ensure the integrity of the examination process and to prevent proxy attendance, the Candidate hereby authorizes the Portal to capture a live photograph (selfie) at the commencement of and/or during the examination. This image will be used solely to authenticate the Candidate's identity against registered records. Failure to provide a clear image or any attempt to bypass this authentication may result in immediate disqualification.
-                   </p>
-                 </div>
-                 <div className="space-y-2">
-                   <h4 className="text-sm font-bold text-slate-900">2. Purpose of Certification and Employment Disclaimer</h4>
-                   <p className="text-xs text-slate-600 leading-relaxed font-medium mb-2">
-                     The Candidate acknowledges and agrees that this certification is intended solely for personal and professional growth.
-                   </p>
-                   <ul className="list-disc pl-5 text-xs text-slate-600 space-y-2 font-medium">
-                     <li><strong>No Guarantee of Employment:</strong> Successful completion of the exam and issuance of a certificate does not guarantee a job offer, placement, or any form of employment.</li>
-                     <li><strong>No Guarantee of Financial Increase:</strong> This certification does not entitle the Candidate to a salary hike, promotion, or bonus from any current or future employer.</li>
-                   </ul>
-                   <p className="text-xs text-slate-600 leading-relaxed font-medium mt-2">
-                     The Portal and its affiliates are not liable for any career expectations not met following the attainment of this certification.
-                   </p>
-                 </div>
-                 <div className="space-y-2">
-                   <h4 className="text-sm font-bold text-slate-900">3. Academic Integrity</h4>
-                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                     The Candidate agrees to complete the examination independently without the use of unauthorized materials, AI tools, or external assistance. Any detected malpractice will lead to the permanent banning of the Candidate's profile and the nullification of any previous results.
-                   </p>
-                 </div>
-                 <div className="space-y-2">
-                   <h4 className="text-sm font-bold text-slate-900">4. Limitation of Liability</h4>
-                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                     The Portal shall not be held responsible for technical failures on the Candidate's end, including but not limited to internet connectivity issues, hardware malfunctions, or power outages during the examination session.
-                   </p>
-                 </div>
-               </div>
-               
-               <label className="flex items-start gap-4 cursor-pointer group mt-4 bg-white p-4 rounded-2xl border border-slate-100 hover:border-primary-500/30 transition-all shadow-sm">
-                  <div className="relative mt-0.5 shrink-0">
-                    <input 
-                      type="checkbox" 
-                      className="peer sr-only" 
-                      checked={isLegalAccepted}
-                      onChange={() => setIsLegalAccepted(!isLegalAccepted)}
-                    />
-                    <div className="w-6 h-6 border-2 border-slate-200 rounded-lg group-hover:border-primary-500 transition-all peer-checked:bg-primary-500 peer-checked:border-primary-500" />
-                    <CheckCircle className="absolute inset-0 w-6 h-6 text-white scale-0 peer-checked:scale-100 transition-transform" />
-                  </div>
-                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors leading-relaxed">
-                    I have read, understood, and agree to follow all the legal terms and academic integrity policies mentioned above.
-                  </span>
-               </label>
+              <h3 className="text-xl font-outfit font-black text-slate-900 tracking-tight">Legal Acknowledgement</h3>
+              <div className="bg-slate-50/80 border border-slate-100 rounded-3xl p-6 md:p-8 space-y-6 max-h-[300px] overflow-y-auto shadow-inner">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-bold text-slate-900">1. Identity Verification and Authentication</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                    To ensure the integrity of the examination process and to prevent proxy attendance, the Candidate hereby authorizes the Portal to capture a live photograph (selfie) at the commencement of and/or during the examination. This image will be used solely to authenticate the Candidate's identity against registered records. Failure to provide a clear image or any attempt to bypass this authentication may result in immediate disqualification.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-bold text-slate-900">2. Purpose of Certification and Employment Disclaimer</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium mb-2">
+                    The Candidate acknowledges and agrees that this certification is intended solely for personal and professional growth.
+                  </p>
+                  <ul className="list-disc pl-5 text-xs text-slate-600 space-y-2 font-medium">
+                    <li><strong>No Guarantee of Employment:</strong> Successful completion of the exam and issuance of a certificate does not guarantee a job offer, placement, or any form of employment.</li>
+                    <li><strong>No Guarantee of Financial Increase:</strong> This certification does not entitle the Candidate to a salary hike, promotion, or bonus from any current or future employer.</li>
+                  </ul>
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium mt-2">
+                    The Portal and its affiliates are not liable for any career expectations not met following the attainment of this certification.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-bold text-slate-900">3. Academic Integrity</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                    The Candidate agrees to complete the examination independently without the use of unauthorized materials, AI tools, or external assistance. Any detected malpractice will lead to the permanent banning of the Candidate's profile and the nullification of any previous results.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-bold text-slate-900">4. Limitation of Liability</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                    The Portal shall not be held responsible for technical failures on the Candidate's end, including but not limited to internet connectivity issues, hardware malfunctions, or power outages during the examination session.
+                  </p>
+                </div>
+              </div>
+
+              <label className="flex items-start gap-4 cursor-pointer group mt-4 bg-white p-4 rounded-2xl border border-slate-100 hover:border-primary-500/30 transition-all shadow-sm">
+                <div className="relative mt-0.5 shrink-0">
+                  <input
+                    type="checkbox"
+                    className="peer sr-only"
+                    checked={isLegalAccepted}
+                    onChange={() => setIsLegalAccepted(!isLegalAccepted)}
+                  />
+                  <div className="w-6 h-6 border-2 border-slate-200 rounded-lg group-hover:border-primary-500 transition-all peer-checked:bg-primary-500 peer-checked:border-primary-500" />
+                  <CheckCircle className="absolute inset-0 w-6 h-6 text-white scale-0 peer-checked:scale-100 transition-transform" />
+                </div>
+                <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors leading-relaxed">
+                  I have read, understood, and agree to follow all the legal terms and academic integrity policies mentioned above.
+                </span>
+              </label>
             </div>
 
             <AnimatePresence>
               {isLegalAccepted && (
-                <motion.button 
+                <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98 }}
-                  type="submit" 
-                  disabled={loading} 
+                  type="submit"
+                  disabled={loading}
                   className="w-full btn-premium !py-5 !text-lg !rounded-2xl shadow-2xl flex items-center justify-center gap-3 overflow-hidden"
                 >
                   {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Complete Registration <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></>}

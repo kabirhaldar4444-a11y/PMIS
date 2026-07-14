@@ -1293,8 +1293,28 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc, onViewBreakdown }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
 
+  const { showAlert } = useAlert();
   const { profile } = useAuth();
   const isSuperAdmin = profile?.role === 'super_admin' || profile?.email === 'kabirhaldar4444@gmail.com' || profile?.email === 'admin@pmi.com';
+
+  const handleUpdateSubmission = async (subId, updates) => {
+    try {
+      const { error } = await supabase
+        .from('submissions')
+        .update(updates)
+        .eq('id', subId);
+
+      if (error) throw error;
+
+      setSubmissions(prev =>
+        prev.map(s => (s.id === subId ? { ...s, ...updates } : s))
+      );
+      showAlert('Assessment updated successfully', 'success');
+    } catch (error) {
+      console.error(error);
+      showAlert(error.message || 'Failed to update assessment', 'error');
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -1453,6 +1473,8 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc, onViewBreakdown }) => {
                         key={sub.id} 
                         submission={sub} 
                         onViewBreakdown={() => onViewBreakdown(sub)} 
+                        onUpdateScore={(newScore) => handleUpdateSubmission(sub.id, { admin_score_override: newScore })}
+                        onToggleRelease={() => handleUpdateSubmission(sub.id, { is_released: !sub.is_released })}
                       />
                     ))}
                   </div>
@@ -1561,7 +1583,10 @@ const DocumentWidget = ({ label, url, onView, restricted }) => (
 );
 
 // UI Only Match to the exact design provided by screenshots for Results
-const MockResultCard = ({ submission, onViewBreakdown }) => {
+const MockResultCard = ({ submission, onViewBreakdown, onUpdateScore, onToggleRelease }) => {
+  const currentScore = submission.admin_score_override ?? submission.score;
+  const isReleased = submission.is_released;
+
   return (
     <div className="bg-white p-6 rounded-3xl border border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
       <div className="flex items-center gap-4">
@@ -1580,9 +1605,34 @@ const MockResultCard = ({ submission, onViewBreakdown }) => {
         <div className="flex flex-col items-center">
           <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-2">FINAL MARKS</label>
           <div className="flex items-center bg-white rounded-full border-2 border-slate-100 shadow-inner p-1">
-            <button className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">-</button>
-            <span className="w-12 text-center font-black text-xl text-slate-800">{submission.admin_score_override ?? submission.score}</span>
-            <button className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">+</button>
+            <button 
+              onClick={() => onUpdateScore(Math.max(0, currentScore - 1))}
+              className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors"
+            >
+              -
+            </button>
+            <input
+              type="number"
+              className="w-12 text-center bg-transparent font-black text-xl text-slate-800 focus:outline-none placeholder:text-slate-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              value={currentScore}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '') {
+                  onUpdateScore(0);
+                } else {
+                  const num = parseInt(val);
+                  if (!isNaN(num)) {
+                    onUpdateScore(Math.max(0, Math.min(submission.total_questions || 100, num)));
+                  }
+                }
+              }}
+            />
+            <button 
+              onClick={() => onUpdateScore(Math.min(submission.total_questions || 100, currentScore + 1))}
+              className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors"
+            >
+              +
+            </button>
           </div>
         </div>
         <div className="flex flex-col gap-2 w-full sm:w-auto">
@@ -1593,8 +1643,19 @@ const MockResultCard = ({ submission, onViewBreakdown }) => {
           >
             <Eye className="w-4 h-4" /> Question Breakdowns
           </button>
-          <button className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-colors text-sm flex items-center justify-center gap-2">
-            Publish Score
+          <button 
+            onClick={onToggleRelease}
+            className={`px-6 py-2.5 font-bold rounded-xl shadow-lg transition-colors text-sm flex items-center justify-center gap-2 ${
+              isReleased 
+                ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30' 
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
+            }`}
+          >
+            {isReleased ? (
+              <><CheckCircle className="w-4 h-4" /> Result Live</>
+            ) : (
+              <><Send className="w-4 h-4" /> Publish Score</>
+            )}
           </button>
         </div>
       </div>
