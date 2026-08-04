@@ -37,10 +37,8 @@ const Login = () => {
       
       // Multi-Role Redirection Logic
       setTimeout(() => {
-        if (profile.role === 'admin') {
+        if (profile.role === 'admin' || profile.role === 'super_admin') {
           navigate('/admin');
-        } else if (profile.role === 'super_admin') {
-          navigate('/super-admin');
         } else {
           navigate(profile.profile_completed ? '/' : '/complete-profile');
         }
@@ -151,6 +149,18 @@ const Login = () => {
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Access Portal <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" /></>}
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] transition-transform" />
+              </button>
+            </div>
+
+            {/* Public Admission Form Link */}
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => navigate('/admission')}
+                className="text-xs font-bold text-slate-500 hover:text-primary-600 transition-colors py-1 inline-flex items-center gap-1.5 group"
+              >
+                <span>New Candidate?</span>
+                <span className="text-primary-600 font-extrabold underline underline-offset-4 group-hover:text-primary-700">Submit Online Admission</span>
               </button>
             </div>
           </form>

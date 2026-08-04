@@ -36,8 +36,7 @@ const ProtectedRoute = ({ children, roleRequired, allowIncomplete = false }) => 
     const isSuperAdminAccessingAdmin = roleRequired === 'admin' && isSuperAdmin;
     
     if (!hasRequiredRole && !isSuperAdminAccessingAdmin) {
-      if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
-      if (profile?.role === 'admin') return <Navigate to="/admin" replace />;
+      if (profile?.role === 'admin' || isSuperAdmin) return <Navigate to="/admin" replace />;
       return <Navigate to="/" replace />;
     }
   }

@@ -12,7 +12,8 @@ import {
   MoreVertical,
   Activity,
   ArrowRight,
-  Loader2
+  Loader2,
+  FileText
 } from 'lucide-react';
 import { supabase } from '../../utils/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -23,6 +24,7 @@ import PMISLogo from '../../components/common/PMISLogo';
 // Import sub-components
 import UsersManagement from './Users';
 import ExamsManagement from './ManageQuestions';
+import AdmissionsManagement from './Admissions';
 
 const AdminDashboard = () => {
   const { user, profile, logout } = useAuth();
@@ -96,6 +98,15 @@ const AdminDashboard = () => {
               <span className="sm:hidden">Users</span>
             </button>
 
+            <button 
+              onClick={() => setActiveTab('admissions')} 
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-black transition-all duration-300 ${activeTab === 'admissions' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-xl shadow-indigo-600/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+            >
+              <FileText className={`w-4 h-4 ${activeTab === 'admissions' ? 'text-white' : ''}`} />
+              <span className="hidden sm:inline">Admissions</span>
+              <span className="sm:hidden">Admissions</span>
+            </button>
+
             <div className="h-6 w-[1px] bg-slate-200 mx-2 hidden md:block"></div>
             
             {isSuperAdmin && (
@@ -130,6 +141,7 @@ const AdminDashboard = () => {
             <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full">
               {activeTab === 'exams' && <ExamsManagement onSubViewChange={setIsSubView} />}
               {activeTab === 'students' && <UsersManagement />}
+              {activeTab === 'admissions' && <AdmissionsManagement />}
             </motion.div>
           </AnimatePresence>
         </div>
