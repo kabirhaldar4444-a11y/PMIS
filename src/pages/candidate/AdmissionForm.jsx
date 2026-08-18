@@ -107,35 +107,35 @@ const fetchClientIP = async () => {
     const text = await res.text();
     const match = text.match(/^ip=(.+)$/m);
     if (match && match[1] && match[1].trim()) return match[1].trim();
-  } catch (err) {}
+  } catch (err) { }
 
   // 2. BigDataCloud API
   try {
     const res = await fetch('https://api.bigdatacloud.net/data/client-ip', { cache: 'no-store' });
     const data = await res.json();
     if (data && data.ipString) return data.ipString;
-  } catch (err) {}
+  } catch (err) { }
 
   // 3. DB-IP Self API
   try {
     const res = await fetch('https://api.db-ip.com/v2/free/self', { cache: 'no-store' });
     const data = await res.json();
     if (data && data.ipAddress) return data.ipAddress;
-  } catch (err) {}
+  } catch (err) { }
 
   // 4. GeoJS API
   try {
     const res = await fetch('https://get.geojs.io/v1/ip/geo.json', { cache: 'no-store' });
     const data = await res.json();
     if (data && data.ip) return data.ip;
-  } catch (err) {}
+  } catch (err) { }
 
   // 5. Ipify API
   try {
     const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
     const data = await res.json();
     if (data && data.ip) return data.ip;
-  } catch (err) {}
+  } catch (err) { }
 
   return 'Not Detected';
 };
@@ -149,7 +149,7 @@ const AdmissionForm = () => {
   const [success, setSuccess] = useState(false);
   const [ipAddress, setIpAddress] = useState('');
   const [submittedReferenceId, setSubmittedReferenceId] = useState('');
-  
+
   // Location States
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
@@ -187,7 +187,7 @@ const AdmissionForm = () => {
   const [cameraError, setCameraError] = useState('');
   const [scriptLanguage, setScriptLanguage] = useState('english'); // 'english' | 'hindi'
   const [isLegalAccepted, setIsLegalAccepted] = useState(false);
-  
+
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
@@ -344,7 +344,7 @@ const AdmissionForm = () => {
       });
       setCameraStream(stream);
       setCameraActive(true);
-      
+
       // Auto-capture profile photo thumbnail from webcam stream
       setTimeout(() => {
         captureStaticProfilePhoto(stream);
@@ -423,7 +423,7 @@ const AdmissionForm = () => {
   const handleStartRecording = () => {
     if (!cameraStream) return;
     recordedChunksRef.current = [];
-    
+
     captureStaticProfilePhoto(cameraStream);
 
     let options = {};
@@ -450,15 +450,15 @@ const AdmissionForm = () => {
         const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
         const videoBlob = new Blob(recordedChunksRef.current, { type: mimeType });
         const videoFile = new File([videoBlob], `statement_${Date.now()}.${ext}`, { type: mimeType });
-        
-        setFiles(prev => ({ 
-          ...prev, 
+
+        setFiles(prev => ({
+          ...prev,
           video: videoFile
         }));
-        
+
         const previewUrl = URL.createObjectURL(videoBlob);
         setVideoPreviewUrl(previewUrl);
-        
+
         // Stop all track resources to turn off the camera lens indicator
         if (cameraStream) {
           cameraStream.getTracks().forEach(track => track.stop());
@@ -541,10 +541,10 @@ const AdmissionForm = () => {
     if (!file) return null;
     const fileExt = file.name ? file.name.split('.').pop() : 'png';
     const uniquePath = `admissions/${Date.now()}_${namePrefix}.${fileExt}`;
-    
+
     const { data, error } = await supabase.storage.from(bucketName).upload(uniquePath, file);
     if (error) throw error;
-    
+
     const { data: { publicUrl } } = supabase.storage.from(bucketName).getPublicUrl(uniquePath);
     return publicUrl;
   };
@@ -849,9 +849,9 @@ Submitted via PMI Services Exam Portal
   };
 
   // Dynamic Prompt scripts containing student info
-  const englishScript = `My name is ${formData.fullName || '______'}, and my registered email address is ${formData.email || '______'}. I purposely recorded this video statement to verify my profile, confirm my identity, and acknowledge my enrollment in PMIS Services' professional training program (available at pmiservices.org). I am purchasing this course for personal skill enhancement, professional development, and career growth. I fully accept and understand that PMIS Services is only an educational skills-based course training provider and never offers a job promise, job placement assurance, or particular career assurances upon course completion. Furthermore, I certify that I will not file any chargebacks or complaints regarding this transaction in the future. I also promise not to share or distribute any copyrighted course materials supplied to me throughout this program. "This statement is made freely, knowingly, and without pressure."`;
+  const englishScript = `My name is ${formData.fullName || '______'}, and my registered email address is ${formData.email || '______'}. I purposely recorded this video statement to verify my profile, confirm my identity, and acknowledge my enrollment in PMI Services' professional training program (available at pmiservices.org). I am purchasing this course for personal skill enhancement, professional development, and career growth. I fully accept and understand that PMI Services is only an educational skills-based course training provider and never offers a job promise, job placement assurance, or particular career assurances upon course completion. Furthermore, I certify that I will not file any chargebacks or complaints regarding this transaction in the future. I also promise not to share or distribute any copyrighted course materials supplied to me throughout this program. "This statement is made freely, knowingly, and without pressure."`;
 
-  const hindiScript = `मेरा नाम ${formData.fullName || '______'} है और मेरा रजिस्टर्ड ईमेल एड्रेस ${formData.email || '______'} है। मैंने यह वीडियो स्टेटमेंट जान-बूझकर रिकॉर्ड किया है ताकि मैं अपनी प्रोफ़ाइल वेरिफ़ाई कर सकूँ, अपनी पहचान कन्फ़र्म कर सकूँ और PMIS Services के प्रोफ़ेशनल ट्रेनिंग प्रोग्राम (जो pmiservices.org पर उपलब्ध है) में अपने एनरोलमेंट की पुष्टि कर सकूँ। मैं यह कोर्स अपनी पर्सनल स्किल बढ़ाने, प्रोफ़ेशनल डेवलपमेंट और करियर में आगे बढ़ने के लिए खरीद रहा हूँ। मैं पूरी तरह से मानता और समझता हूँ कि PMIS Services सिर्फ़ एक एजुकेशनल स्किल-बेस्ड कोर्स ट्रेनिंग प्रोवाइडर है और कोर्स पूरा होने पर कभी भी नौकरी का वादा, नौकरी मिलने की गारंटी या किसी खास करियर की गारंटी नहीं देता है। इसके अलावा, मैं यह सर्टिफ़ाई करता हूँ कि भविष्य में इस ट्रांज़ैक्शन के बारे में कोई चार्जबैक या शिकायत नहीं करूँगा। मैं यह भी वादा करता हूँ कि इस प्रोग्राम के दौरान मुझे दिए गए किसी भी कॉपीराइट वाले कोर्स मटीरियल को शेयर या डिस्ट्रीब्यूट नहीं करूँगा। "यह स्टेटमेंट बिना किसी दबाव के, पूरी जानकारी के साथ और अपनी मर्ज़ी से दिया जा रहा है।"`;
+  const hindiScript = `मेरा नाम ${formData.fullName || '______'} है और मेरा रजिस्टर्ड ईमेल एड्रेस ${formData.email || '______'} है। मैंने यह वीडियो स्टेटमेंट जान-बूझकर रिकॉर्ड किया है ताकि मैं अपनी प्रोफ़ाइल वेरिफ़ाई कर सकूँ, अपनी पहचान कन्फ़र्म कर सकूँ और PMI Services के प्रोफ़ेशनल ट्रेनिंग प्रोग्राम (जो pmiservices.org पर उपलब्ध है) में अपने एनरोलमेंट की पुष्टि कर सकूँ। मैं यह कोर्स अपनी पर्सनल स्किल बढ़ाने, प्रोफ़ेशनल डेवलपमेंट और करियर में आगे बढ़ने के लिए खरीद रहा हूँ। मैं पूरी तरह से मानता और समझता हूँ कि PMI Services सिर्फ़ एक एजुकेशनल स्किल-बेस्ड कोर्स ट्रेनिंग प्रोवाइडर है और कोर्स पूरा होने पर कभी भी नौकरी का वादा, नौकरी मिलने की गारंटी या किसी खास करियर की गारंटी नहीं देता है। इसके अलावा, मैं यह सर्टिफ़ाई करता हूँ कि भविष्य में इस ट्रांज़ैक्शन के बारे में कोई चार्जबैक या शिकायत नहीं करूँगा। मैं यह भी वादा करता हूँ कि इस प्रोग्राम के दौरान मुझे दिए गए किसी भी कॉपीराइट वाले कोर्स मटीरियल को शेयर या डिस्ट्रीब्यूट नहीं करूँगा। "यह स्टेटमेंट बिना किसी दबाव के, पूरी जानकारी के साथ और अपनी मर्ज़ी से दिया जा रहा है।"`;
 
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -861,7 +861,7 @@ Submitted via PMI Services Exam Portal
 
   return (
     <div className="min-h-screen py-10 px-4 flex flex-col items-center justify-start bg-slate-50/50 font-outfit">
-      
+
       {/* Hidden photo canvas to extract thumbnail */}
       <canvas ref={photoCanvasRef} width="400" height="400" className="hidden" />
 
@@ -1023,7 +1023,7 @@ Submitted via PMI Services Exam Portal
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-slate-500 group-hover:text-slate-900" />
             <span>Back to Login</span>
           </button>
-          
+
           <div className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
             <span className="hidden sm:inline">Already registered?</span>
             <button
@@ -1139,7 +1139,7 @@ Submitted via PMI Services Exam Portal
         {/* STEP 2: IDENTITY VERIFICATION & DOCUMENTS */}
         {step === 2 && (
           <form onSubmit={handleSubmit} className="space-y-10">
-            
+
             {/* PERSONAL CREDENTIALS / ADDRESS HEADER */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#1e293b] border-l-2 border-primary-500 pl-3">
@@ -1149,11 +1149,10 @@ Submitted via PMI Services Exam Portal
                 type="button"
                 onClick={handleDetectLocation}
                 disabled={detectingLocation}
-                className={`flex items-center gap-1.5 text-[10px] font-bold border px-3 py-1.5 rounded-lg transition-all duration-200 disabled:opacity-50 ${
-                  locationDetected 
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300' 
-                    : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-400'
-                }`}
+                className={`flex items-center gap-1.5 text-[10px] font-bold border px-3 py-1.5 rounded-lg transition-all duration-200 disabled:opacity-50 ${locationDetected
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                  : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-400'
+                  }`}
               >
                 {locationDetected ? (
                   <>
@@ -1230,7 +1229,7 @@ Submitted via PMI Services Exam Portal
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#1e293b] border-l-2 border-primary-500 pl-3">
                 Livestream Verification <span className="text-red-500 font-bold ml-1">*</span>
               </h2>
-              
+
               <div className="bg-slate-50/50 border border-slate-100 rounded-3xl p-6">
                 {cameraError && (
                   <div className="mb-4 text-xs font-bold text-rose-500 bg-rose-50 border border-rose-100 px-4 py-2 rounded-xl text-center">
@@ -1363,7 +1362,7 @@ Submitted via PMI Services Exam Portal
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#1e293b] border-l-2 border-primary-500 pl-3">
                 Identity Documents <span className="text-red-500 font-bold ml-1">*</span>
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Aadhaar Front */}
                 <div className="relative group h-[130px]">
@@ -1550,7 +1549,7 @@ Submitted via PMI Services Exam Portal
       </motion.div>
 
       {/* Bottom return to login prompt */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
