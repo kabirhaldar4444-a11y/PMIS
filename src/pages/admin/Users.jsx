@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Search, Shield, Eye, Edit2, Trash2, Lock, Unlock, X,
   Loader2, Mail, User, Key, CheckCircle, FileText, Download, UploadCloud, MapPin, Phone,
-  RotateCw, ArrowLeft, Send, ShieldAlert
+  RotateCw, ArrowLeft, Send, ShieldAlert, Video
 } from 'lucide-react';
 import { useAlert } from '../../context/AlertProvider';
 import { useAuth } from '../../context/AuthContext';
@@ -138,7 +138,7 @@ const Users = () => {
         'role', 'profile_completed', 'disclaimer_accepted',
         'allotted_exam_ids', 'is_exam_locked', 'can_register',
         'profile_photo_url', 'live_photo_url', 'aadhaar_front_url',
-        'aadhaar_back_url', 'pan_card_url', 'signature_url'
+        'aadhaar_back_url', 'pan_card_url', 'signature_url', 'video_url'
       ];
 
       const cleanProfileData = {};
@@ -1450,6 +1450,7 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc, onViewBreakdown }) => {
                   <DocumentWidget label="Aadhar Back" url={user.aadhaar_back_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Aadhar Back", url: user.aadhaar_back_url })} />
                   <DocumentWidget label="PAN Card" url={user.pan_card_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "PAN Card", url: user.pan_card_url })} />
                   <DocumentWidget label="Signature" url={user.signature_url} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Signature Scan", url: user.signature_url })} />
+                  <DocumentWidget label="Video Statement" url={user.video_url} isVideo={true} restricted={!isSuperAdmin} onView={() => onViewDoc({ label: "Video Verification Statement", url: user.video_url, type: 'video' })} />
                 </div>
               </div>
 
@@ -1516,7 +1517,11 @@ const DocumentViewerOverlay = ({ doc, onClose }) => {
               </button>
             </div>
             <div className="flex-1 overflow-auto rounded-2xl bg-black/50 m-2 flex justify-center items-center">
-              <img src={doc.url} alt={doc.label} className="max-w-full max-h-full object-contain p-2" />
+              {doc.type === 'video' ? (
+                <video src={doc.url} controls autoPlay className="max-w-full max-h-[70vh] object-contain p-2" />
+              ) : (
+                <img src={doc.url} alt={doc.label} className="max-w-full max-h-full object-contain p-2" />
+              )}
             </div>
             <div className="p-4 flex justify-end border-t border-white/10 shrink-0">
               <a href={doc.url} download target="_blank" rel="noreferrer" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors flex items-center gap-2 text-sm">
@@ -1530,7 +1535,7 @@ const DocumentViewerOverlay = ({ doc, onClose }) => {
   );
 };
 
-const DocumentWidget = ({ label, url, onView, restricted }) => (
+const DocumentWidget = ({ label, url, onView, restricted, isVideo }) => (
   <div className={`group relative bg-white p-5 rounded-3xl border transition-all duration-300 ${restricted ? 'border-slate-100' : 'border-slate-100 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/5'}`}>
     <div className="flex flex-col gap-4">
       {/* Header Row */}
@@ -1541,7 +1546,7 @@ const DocumentWidget = ({ label, url, onView, restricted }) => (
               ? 'bg-blue-50 border-blue-100/50 text-blue-600'
               : 'bg-slate-50 border-slate-100 text-slate-300'
           }`}>
-          {restricted ? <ShieldAlert className="w-5 h-5" /> : (url ? <FileText className="w-5 h-5" /> : <X className="w-5 h-5" />)}
+          {restricted ? <ShieldAlert className="w-5 h-5" /> : (url ? (isVideo ? <Video className="w-5 h-5" /> : <FileText className="w-5 h-5" />) : <X className="w-5 h-5" />)}
         </div>
 
         {restricted ? (

@@ -61,7 +61,7 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                 <ShieldCheck className="w-8 h-8" />
               </div>
               <div>
-                <h3 className="text-3xl font-bold text-slate-900 tracking-tight">PMIS Policies</h3>
+                <h3 className="text-3xl font-bold text-slate-900 tracking-tight">PMI Services Policies</h3>
                 <p className="text-sm font-semibold text-slate-400 uppercase tracking-[0.2em] mt-1">Review our service delivery and privacy standards</p>
               </div>
             </div>
@@ -79,7 +79,7 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">Enrollment Process</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>Customers visit the PMIS website and fill out the Enrollment Form.</li>
+                        <li>Customers visit the PMI Services website and fill out the Enrollment Form.</li>
                         <li>After form submission, Our team connects with the customer.</li>
                         <li>A detailed email is shared explaining the complete process flow and fee structure. Payments may also be accepted directly through an authorized professional expert trainer account, where applicable.</li>
                       </ul>
@@ -137,7 +137,7 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                     </div>
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">Continuous Support</h5>
-                      <p>Throughout the entire journey, the PMIS team remains in contact for guidance and support.</p>
+                      <p>Throughout the entire journey, the PMI Services team remains in contact for guidance and support.</p>
                     </div>
                   </div>
                 </div>
@@ -153,7 +153,7 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                       <ul className="list-disc pl-5 space-y-1">
                         <li>The complete course will be delivered within 90 to 120 days from the date of enrollment.</li>
                         <li>After enrollment, learners will receive an Invoice, Study Materials and video lectures within 10 working days of making the payment.</li>
-                        <li>A Pre-Board Exam will be scheduled 24 to 48 hours after payment, accessible via the official PMIS exam portal. An Initial PC Softcopy (indicating “Under Training” and course details), will be provided after going through the pre-board exam within 48 to 72 hours.</li>
+                        <li>A Pre-Board Exam will be scheduled 24 to 48 hours after payment, accessible via the official PMI Services exam portal. An Initial PC Softcopy (indicating “Under Training” and course details), will be provided after going through the pre-board exam within 48 to 72 hours.</li>
                         <li>The final online exam must be attended between 90 to 120 days after enrollment.</li>
                         <li>Upon successful exam completion, the Final PC Softcopy will be emailed to the candidate, indicating “Successfully Certified”.</li>
                       </ul>
@@ -240,7 +240,7 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                       <h5 className="font-bold text-slate-800 mb-2">Data Storage and Security & Payment & Financial Data</h5>
                       <ul className="list-disc pl-5 space-y-1">
                         <li>All personal data is stored securely in encrypted databases.</li>
-                        <li>Only authorized PMIS personnel have access to user data.</li>
+                        <li>Only authorized PMI Services personnel have access to user data.</li>
                         <li>We regularly update our systems and employ security measures such as SSL encryption to protect against unauthorized access, alteration, or disclosure.</li>
                       </ul>
                     </div>
@@ -258,7 +258,7 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                       <h5 className="font-bold text-slate-800 mb-2">Data Retention & Third-Party Links</h5>
                       <ul className="list-disc pl-5 space-y-1">
                         <li>We retain your personal information for as long as necessary to fulfill course delivery and legal obligations. Once no longer needed, your data will be securely deleted or anonymized.</li>
-                        <li>Our website may contain links to third-party websites (e.g., payment gateways or educational partners). PMIS is not responsible for the privacy practices or content of these external sites.</li>
+                        <li>Our website may contain links to third-party websites (e.g., payment gateways or educational partners). PMI Services is not responsible for the privacy practices or content of these external sites.</li>
                       </ul>
                     </div>
                     <div>
@@ -269,11 +269,11 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                         <li>Request correction or deletion of inaccurate data.</li>
                         <li>Withdraw consent for marketing communications at any time.</li>
                       </ul>
-                      <p className="mt-2">To exercise these rights, please contact our support team at support@PMIS.com.</p>
+                      <p className="mt-2">To exercise these rights, please contact our support team at support@pmiservices.org.</p>
                     </div>
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">Policy Updates</h5>
-                      <p>PMIS OPC Pvt Ltd and PayG, reserves the right to update or modify this Privacy Policy at any time without prior notice. The revised version will be posted on our website with an updated effective date.</p>
+                      <p>PMI Services (OPC) Pvt Ltd and PayG, reserves the right to update or modify this Privacy Policy at any time without prior notice. The revised version will be posted on our website with an updated effective date.</p>
                     </div>
                   </div>
                 </div>
@@ -296,21 +296,21 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                       <ul className="list-disc pl-5 space-y-1">
                         <li>If a candidate wishes to cancel their enrollment before attempting the pre-exam, they are eligible for a 90% refund of the total course fee.</li>
                         <li>Refund will be only be provided if the customer raised the request within 24 hours of making the payment and they must not attend the exam otherwise no refund will be initiated to them.</li>
-                        <li>The refund request must be raised in writing via email to the official PMIS support team.</li>
+                        <li>The refund request must be raised in writing via email to the official PMI Services support team.</li>
                         <li>Refund processing time is 5-7 working days once the refund request is approved it may take an additional 7 working days to get credited into the customer's bank account from which payment was made.</li>
                       </ul>
                     </div>
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">No 100% Refund Policy & 10% Deduction</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>Please note that PMIS does not offer a 100% refund under any condition. This is due to administrative, processing, and content access costs incurred upon enrollment.</li>
+                        <li>Please note that PMI Services does not offer a 100% refund under any condition. This is due to administrative, processing, and content access costs incurred upon enrollment.</li>
                         <li>All approved refunds will include a 10% deduction to cover costs associated with digital content delivery, study materials, and platform usage. This deduction applies uniformly to all refund cases.</li>
                       </ul>
                     </div>
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">Refund Request Procedure</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>To request a refund, the candidate must email support@PMIS.com with their full name, registered email ID, course name, payment receipt, and reason for cancellation.</li>
+                        <li>To request a refund, the candidate must email support@pmiservices.org with their full name, registered email ID, course name, payment receipt, and reason for cancellation.</li>
                         <li>Requests without complete details may face delays in processing.</li>
                       </ul>
                     </div>
@@ -335,14 +335,14 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">Agreement to Policies</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>By enrolling in any course offered by PMIS Education, candidates acknowledge and agree to comply with all policies, terms of service, and refund rules.</li>
+                        <li>By enrolling in any course offered by PMI Services Education, candidates acknowledge and agree to comply with all policies, terms of service, and refund rules.</li>
                         <li>Enrolling confirms that the candidate has read, understood, and accepted the terms outlined in the policies, including payment, course access, exam schedules, and refund rules.</li>
                         <li>Candidates are responsible for reviewing these policies prior to enrollment, as continued use of the course materials implies acceptance of all terms.</li>
                       </ul>
                     </div>
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">Independent Organization</h5>
-                      <p>PMIS (OPC) PVT. LTD. is an independent training and service provider. We are not affiliated, associated, authorized, endorsed by, or in any way officially connected with any other institute, organization, or governing body. All rights related to our services, content, and training materials are solely reserved by PMIS.</p>
+                      <p>PMI Services (OPC) PVT. LTD. is an independent training and service provider. We are not affiliated, associated, authorized, endorsed by, or in any way officially connected with any other institute, organization, or governing body. All rights related to our services, content, and training materials are solely reserved by PMI Services.</p>
                     </div>
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">No Guarantee of Employment or Monetary Benefit</h5>
@@ -350,7 +350,7 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                     </div>
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">Third-Party Recommendations</h5>
-                      <p>PMIS shall not be held responsible for any financial, personal, or professional loss incurred by customers who enroll in our services based on third-party recommendations, promotions, or representations. Any such engagement is strictly at the discretion and responsibility of the individual.</p>
+                      <p>PMI Services shall not be held responsible for any financial, personal, or professional loss incurred by customers who enroll in our services based on third-party recommendations, promotions, or representations. Any such engagement is strictly at the discretion and responsibility of the individual.</p>
                     </div>
                   </div>
                 </div>

@@ -19,7 +19,8 @@ import {
   Search,
   PenTool,
   ShieldAlert,
-  RefreshCw
+  RefreshCw,
+  RotateCcw
 } from 'lucide-react';
 import SignatureCanvas from '../../components/SignatureCanvas';
 import DisclaimerOverlay from '../../components/DisclaimerOverlay';
@@ -343,13 +344,227 @@ const CompleteProfile = () => {
 
   const [files, setFiles] = useState({
     photo: null,
+    video: null,
     aadhaarFront: null,
     aadhaarBack: null,
     panCard: null,
     signature: null
   });
 
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  // Camera & Video Recorder States
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState('');
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [cameraError, setCameraError] = useState('');
+  const [scriptLanguage, setScriptLanguage] = useState('english'); // 'english' | 'hindi'
+
+  const videoRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
+  const photoCanvasRef = useRef(null);
+
+  // Dynamic Prompt scripts containing student info
+  const englishScript = `My name is ${formData.fullName || '______'}, and my registered email address is ${user?.email || '______'}. I purposely recorded this video statement to verify my profile, confirm my identity, and acknowledge my enrollment in PMI Services' professional training program (available at pmiservices.org). I am purchasing this course for personal skill enhancement, professional development, and career growth. I fully accept and understand that PMI Services is only an educational skills-based course training provider and never offers a job promise, job placement assurance, or particular career assurances upon course completion. Furthermore, I certify that I will not file any chargebacks or complaints regarding this transaction in the future. I also promise not to share or distribute any copyrighted course materials supplied to me throughout this program. "This statement is made freely, knowingly, and without pressure."`;
+
+  const hindiScript = `मेरा नाम ${formData.fullName || '______'} है और मेरा रजिस्टर्ड ईमेल एड्रेस ${user?.email || '______'} है। मैंने यह वीडियो स्टेटमेंट जान-बूझकर रिकॉर्ड किया है ताकि मैं अपनी प्रोफ़ाइल वेरिफ़ाई कर सकूँ, अपनी पहचान कन्फ़र्म कर सकूँ और PMI Services के प्रोफ़ेशनल ट्रेनिंग प्रोग्राम (जो pmiservices.org पर उपलब्ध है) में अपने एनरोलमेंट की पुष्टि कर सकूँ। मैं यह कोर्स अपनी पर्सनल स्किल बढ़ाने, प्रोफ़ेशनल डेवलपमेंट और करियर में आगे बढ़ने के लिए खरीद रहा हूँ। मैं पूरी तरह से मानता और समझता हूँ कि PMI Services सिर्फ़ एक एजुकेशनल स्किल-बेस्ड कोर्स ट्रेनिंग प्रोवाइडर है और कोर्स पूरा होने पर कभी भी नौकरी का वादा, नौकरी मिलने की गारंटी या किसी खास करियर की गारंटी नहीं देता है। इसके अलावा, मैं यह सर्टिफ़ाई करता हूँ कि भविष्य में इस ट्रांज़ैक्शन के बारे में कोई चार्जबैक या शिकायत नहीं करूँगा। मैं यह भी वादा करता हूँ कि इस प्रोग्राम के दौरान मुझे दिए गए किसी भी कॉपीराइट वाले कोर्स मटीरियल को शेयर या डिस्ट्रीब्यूट नहीं करूँगा। "यह स्टेटमेंट बिना किसी दबाव के, पूरी जानकारी के साथ और अपनी मर्ज़ी से दिया जा रहा है।"`;
+
+  const formatTimer = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Bind live webcam stream to video element when active and mounted
+  useEffect(() => {
+    if (cameraActive && cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraActive, cameraStream]);
+
+  // Video and camera stream access
+  const handleOpenLens = async () => {
+    try {
+      setCameraError('');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: 640, height: 480 },
+        audio: true
+      });
+      setCameraStream(stream);
+      setCameraActive(true);
+
+      // Auto-capture profile photo thumbnail from webcam stream
+      setTimeout(() => {
+        captureStaticProfilePhoto(stream);
+      }, 1500);
+
+    } catch (err) {
+      console.error(err);
+      setCameraError('Webcam or Microphone access denied. Please allow permissions and try again.');
+    }
+  };
+
+  // Captures static thumbnail from video blob or stream for profile photo
+  const extractFrameFromVideo = (videoSource) => {
+    return new Promise((resolve) => {
+      try {
+        const video = document.createElement('video');
+        video.src = typeof videoSource === 'string' ? videoSource : URL.createObjectURL(videoSource);
+        video.muted = true;
+        video.playsInline = true;
+        video.crossOrigin = 'anonymous';
+
+        const captureCanvas = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth || 400;
+          canvas.height = video.videoHeight || 400;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const file = new File([blob], `profile_${Date.now()}.png`, { type: 'image/png' });
+              resolve(file);
+            } else {
+              resolve(null);
+            }
+          }, 'image/png', 0.85);
+        };
+
+        video.onloadeddata = () => {
+          video.currentTime = 0.5;
+        };
+
+        video.onseeked = () => {
+          captureCanvas();
+        };
+
+        // Fallback if seeking doesn't trigger on some browsers
+        setTimeout(() => {
+          captureCanvas();
+        }, 1000);
+
+        video.onerror = () => resolve(null);
+      } catch (err) {
+        console.error(err);
+        resolve(null);
+      }
+    });
+  };
+
+  const captureStaticProfilePhoto = (stream) => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 400;
+    canvas.height = video.videoHeight || 400;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const profileFile = new File([blob], `profile_${Date.now()}.png`, { type: 'image/png' });
+        setFiles(prev => ({ ...prev, photo: profileFile }));
+      }
+    }, 'image/png', 0.85);
+  };
+
+  // Video recording control
+  const handleStartRecording = () => {
+    if (!cameraStream) return;
+    recordedChunksRef.current = [];
+
+    captureStaticProfilePhoto(cameraStream);
+
+    let options = {};
+    if (MediaRecorder.isTypeSupported('video/mp4')) {
+      options = { mimeType: 'video/mp4' };
+    } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+      options = { mimeType: 'video/webm;codecs=vp8,opus' };
+    } else if (MediaRecorder.isTypeSupported('video/webm')) {
+      options = { mimeType: 'video/webm' };
+    }
+
+    try {
+      const recorder = new MediaRecorder(cameraStream, options);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const mimeType = recorder.mimeType || 'video/webm';
+        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const videoBlob = new Blob(recordedChunksRef.current, { type: mimeType });
+        const videoFile = new File([videoBlob], `statement_${Date.now()}.${ext}`, { type: mimeType });
+
+        setFiles(prev => ({
+          ...prev,
+          video: videoFile
+        }));
+
+        const previewUrl = URL.createObjectURL(videoBlob);
+        setVideoPreviewUrl(previewUrl);
+
+        // Stop all track resources to turn off the camera lens indicator
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop());
+        }
+        setCameraStream(null);
+        setCameraActive(false);
+      };
+
+      recorder.start(10); // Capture data chunks every 10ms
+      setIsRecording(true);
+      setRecordingSeconds(0);
+
+      // Start elapsed timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds(prev => {
+          if (prev >= 60) { // Limit to 60s
+            handleStopRecording();
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+
+    } catch (e) {
+      console.error('Failed to start recorder', e);
+      showAlert('Could not start video recording', 'error');
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+    }
+  };
+
+  const handleResetVideo = () => {
+    setVideoPreviewUrl('');
+    setFiles(prev => ({ ...prev, video: null }));
+    handleOpenLens();
+  };
+
+  // Close camera on component unmount
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+    };
+  }, [cameraStream]);
 
   const handleFileUpload = async (file, bucketPath, bucketName = 'aadhaar_cards') => {
     if (!file) return null;
@@ -369,7 +584,7 @@ const CompleteProfile = () => {
         body: JSON.stringify({
           access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || 'ef703b89-4260-498d-90f8-5947a84ba4ab',
           subject: `KYC Verification Report: ${candidateData.fullName}`,
-          from_name: "PMIS Portal",
+          from_name: "PMI Services Portal",
           recipient: import.meta.env.VITE_ADMIN_EMAIL || 'support@pmiservices.org',
           message: `Hello,
 
@@ -399,7 +614,7 @@ VERIFICATION STATUS:
 
 LEGAL ACKNOWLEDGEMENT & ATTESTATION:
 1. IDENTITY VERIFICATION:
-Candidate authorizes live photo capture for identity authentication and anti-proxy measures.
+Candidate authorizes live photo capture and video statement recording for identity authentication and anti-proxy measures.
 
 2. EMPLOYMENT DISCLAIMER:
 Candidate acknowledges certification does not guarantee employment, placement, or financial increases.
@@ -411,7 +626,7 @@ Candidate agrees to complete exams independently without unauthorized materials 
 Portal is not liable for technical failures or candidate-side connectivity issues during examinations.
 
 TERMS & CONDITIONS:
-• Course Duration and Delivery: The complete course will be delivered within 90 to 120 days from the date of enrollment. After enrollment, learners will receive an Invoice, Study Materials and video lectures within 10 working days of making the payment. A Pre-Board Exam will be scheduled 24 to 48 hours after payment, accessible via the official PMIS exam portal. An Initial PC Softcopy (indicating “Under Training” and course details), will be provided after going through the pre-board exam within 48 to 72 hours. The final online exam must be attended between 90 to 120 days after enrollment. Upon successful exam completion, the Final PC Softcopy will be emailed to the candidate, indicating “Successfully Certified”.
+• Course Duration and Delivery: The complete course will be delivered within 90 to 120 days from the date of enrollment. After enrollment, learners will receive an Invoice, Study Materials and video lectures within 10 working days of making the payment. A Pre-Board Exam will be scheduled 24 to 48 hours after payment, accessible via the official PMI Services exam portal. An Initial PC Softcopy (indicating “Under Training” and course details), will be provided after going through the pre-board exam within 48 to 72 hours. The final online exam must be attended between 90 to 120 days after enrollment. Upon successful exam completion, the Final PC Softcopy will be emailed to the candidate, indicating “Successfully Certified”.
 • Training Format: No live training sessions will be provided. Study material and training videos will be shared once only via email after the enrollment. Training videos and study materials are non-transferable and intended solely for enrolled candidates. Upon successful completion of the program, the certificate will be released with an abbreviation format. For an example if the course you have enrolled in "Resilience Coach Training", then "RCT" will appear on your certificate, similarly if the course name is Decision Making Mastery Training, on the certificate it will show "DMMT"
 • Exam Policy: Multiple exam attempts are not permitted, for pre- board as well as final exam. The Final PC Softcopy will be issued within 15 days after the final exam attempt. No hard copy certificates will be delivered; all documents will be sent in digital format only.
 • Pre-Examination Reward Policy: Candidates who secure 80% or above in the designated pre-examination will be eligible to receive a complimentary gift. Eligible candidates will be provided with 5+ options for gift items worth upto 50k-100k. The final gift selection will be subject to availability and company discretion. By qualifying for the reward, candidates consent to the use and display of their photograph on the company's official website and promotional platforms. Gift items will be dispatched within 45 to 60 days from the date of result declaration. All gifts will be accompanied by the manufacturer's warranty, where applicable. Courier tracking details will be shared via registered email once the item is dispatched. For delivery verification, a one-time password (OTP) required by the courier partner will be shared with the recipient by the company. The company may modify, substitute, or discontinue the reward offer at any time without prior notice.
@@ -419,15 +634,15 @@ TERMS & CONDITIONS:
 
 REFUND POLICY:
 • No Refund After Exam Attempt: Once a candidate has attempted any exam — whether it is the Pre-Board Exam or the Final Exam — no refund will be applicable under any circumstances. This policy ensures the integrity of our course access and examination system as study materials and evaluations are already utilized.
-• 90% Refund Before Exam Attempt: If a candidate wishes to cancel their enrollment before the pre-exam, they are eligible for a 90% refund of the total course fee. Refund will be only be provided if the customer raised the request within 24 hours of making the payment and they must not attend the exam otherwise no refund will be initiated. The refund request must be raised in writing via email to the official PMIS support team. Refund processing time is 5-7 working days once the request is approved; it may take an additional 7 working days to get credited into the customer's bank account.
-• No 100% Refund Policy: PMIS does not offer a 100% refund under any condition due to administrative, processing, and content access costs.
-• Refund Request Procedure: To request a refund, the candidate must email support@PMIS.com with full name, email, course name, receipt, and reason.
+• 90% Refund Before Exam Attempt: If a candidate wishes to cancel their enrollment before the pre-exam, they are eligible for a 90% refund of the total course fee. Refund will be only be provided if the customer raised the request within 24 hours of making the payment and they must not attend the exam otherwise no refund will be initiated. The refund request must be raised in writing via email to the official PMI Services support team. Refund processing time is 5-7 working days once the request is approved; it may take an additional 7 working days to get credited into the customer's bank account.
+• No 100% Refund Policy: PMI Services does not offer a 100% refund under any condition due to administrative, processing, and content access costs.
+• Refund Request Procedure: To request a refund, the candidate must email support@pmiservices.org with full name, email, course name, receipt, and reason.
 • 10% Deduction on All Refunds: All approved refunds will include a 10% deduction for digital content delivery, study materials, and platform usage.
 • Special Note - Refunds not applicable for partial completion, delayed progress, accessed content, or dissatisfaction.
 
 LEGAL NOTICE:
 • No Guarantee of Employment or Monetary Benefit: Our programs are designed for skill development and professional enhancement only. We do not guarantee any monetary benefit, job placement, promotion, or financial gain as a result of completing our training or certification programs.
-• Third-Party Recommendations: PMIS shall not be held responsible for any financial, personal, or professional loss incurred by customers who enroll in our services based on third-party recommendations, promotions, or representations. Any such engagement is strictly at the discretion and responsibility of the individual.
+• Third-Party Recommendations: PMI Services shall not be held responsible for any financial, personal, or professional loss incurred by customers who enroll in our services based on third-party recommendations, promotions, or representations. Any such engagement is strictly at the discretion and responsibility of the individual.
 
 ACCEPTED BY CANDIDATE: YES ✓
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -436,6 +651,9 @@ DOCUMENT ACCESS LINKS:
 ─────────────────────
 • Profile Photo:
 ${candidateData.photoUrl || 'Not uploaded'}
+
+• Live Video Statement:
+${candidateData.videoUrl || 'Not uploaded'}
 
 • Aadhaar Card (Front):
 ${candidateData.frontUrl || 'Not uploaded'}
@@ -450,7 +668,7 @@ ${candidateData.panUrl || 'Not uploaded'}
 ${candidateData.signatureUrl || 'Not uploaded'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Submitted via PMIS Exam Portal
+Submitted via PMI Services Exam Portal
 `
         })
       });
@@ -468,15 +686,25 @@ Submitted via PMIS Exam Portal
       showAlert('Invalid Mobile Number. Must be 10 digits.', 'error');
       return;
     }
-    if (!files.photo || !files.signature || !files.aadhaarFront || !files.aadhaarBack || !files.panCard) {
+    if (!files.video) {
+      showAlert('Live Video Statement is mandatory. Please record yourself.', 'warning');
+      return;
+    }
+    if (!files.signature || !files.aadhaarFront || !files.aadhaarBack || !files.panCard) {
       showAlert('Please provide all required documents, PAN card, and signature.', 'warning');
       return;
     }
 
     setLoading(true);
     try {
-      const [photoUrl, frontUrl, backUrl, panUrl, signatureUrl] = await Promise.all([
-        handleFileUpload(files.photo, 'photo', 'candidate_documents'),
+      let photoFile = files.photo;
+      if (!photoFile && files.video) {
+        photoFile = await extractFrameFromVideo(files.video);
+      }
+
+      const [photoUrl, videoUrl, frontUrl, backUrl, panUrl, signatureUrl] = await Promise.all([
+        handleFileUpload(photoFile, 'photo', 'candidate_documents'),
+        handleFileUpload(files.video, 'video_statement', 'candidate_documents'),
         handleFileUpload(files.aadhaarFront, 'aadhaar_front', 'aadhaar_cards'),
         handleFileUpload(files.aadhaarBack, 'aadhaar_back', 'aadhaar_cards'),
         handleFileUpload(files.panCard, 'pan_card', 'candidate_documents'),
@@ -489,6 +717,7 @@ Submitted via PMIS Exam Portal
         phone: formData.phone,
         address: fullAddress,
         profile_photo_url: photoUrl,
+        video_url: videoUrl,
         aadhaar_front_url: frontUrl,
         aadhaar_back_url: backUrl,
         pan_card_url: panUrl,
@@ -503,6 +732,7 @@ Submitted via PMIS Exam Portal
         ...formData,
         email: user.email,
         photoUrl,
+        videoUrl,
         frontUrl,
         backUrl,
         panUrl,
@@ -521,7 +751,9 @@ Submitted via PMIS Exam Portal
   return (
     <>
       <DisclaimerOverlay user={user} profile={profile} />
-      <CameraModal isOpen={isCameraOpen} onClose={() => setIsCameraOpen(false)} onCapture={(file) => setFiles({ ...files, photo: file })} />
+      
+      {/* Hidden photo canvas to extract thumbnail */}
+      <canvas ref={photoCanvasRef} width="400" height="400" className="hidden" />
 
       {/* ── LOCATION PERMISSION MODAL ── */}
       <AnimatePresence>
@@ -615,35 +847,156 @@ Submitted via PMIS Exam Portal
           </header>
 
           <form onSubmit={handleSubmit} className="space-y-10">
-            {/* MANDATORY LIVE PHOTO CAPTURE */}
-            <div className="flex flex-col gap-3">
-              {/* Row: label left — detect location button right */}
+            {/* LOCATION DETECTION */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Location Identification *</label>
+              <button
+                type="button"
+                onClick={handleDetectLocation}
+                disabled={detectingLocation}
+                className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 border border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-wait"
+              >
+                <MapPin className="w-3 h-3" />
+                {detectingLocation ? 'Detecting...' : 'Detect Location'}
+              </button>
+            </div>
+
+            {/* IDENTITY VERIFICATION (LIVE PHOTO & VIDEO STATEMENT) */}
+            <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Identity Verification (Live Photo) *</label>
-                <button
-                  type="button"
-                  onClick={handleDetectLocation}
-                  disabled={detectingLocation}
-                  className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 border border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-wait"
-                >
-                  <MapPin className="w-3 h-3" />
-                  {detectingLocation ? 'Detecting...' : 'Detect Location'}
-                </button>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Identity verification (Live Photo & Video Statement) *</label>
+                {files.photo && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase">Live Photo Captured ✓</span>
+                    <div className="w-10 h-10 rounded-full border border-emerald-200 overflow-hidden shadow-sm">
+                      <img src={URL.createObjectURL(files.photo)} className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                )}
               </div>
-              {/* Photo circle centered */}
-              <div className="flex justify-center">
-                <div className="relative">
-                  <div className={`w-40 h-40 rounded-full border-4 flex flex-col items-center justify-center transition-all bg-white ${files.photo ? 'border-primary-500 shadow-2xl' : 'border-slate-100 shadow-inner'}`}>
-                    {files.photo ? (
-                      <img src={URL.createObjectURL(files.photo)} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <Camera className="w-10 h-10 text-slate-300" />
-                    )}
-                    <button type="button" onClick={() => setIsCameraOpen(true)} className="absolute -bottom-2 right-0 w-12 h-12 rounded-2xl flex items-center justify-center bg-primary-500 text-white shadow-xl hover:scale-110 transition-all">
-                      <Camera className="w-5 h-5" />
+
+              <div className="bg-slate-50/50 border border-slate-100 rounded-3xl p-6">
+                {cameraError && (
+                  <div className="mb-4 text-xs font-bold text-rose-500 bg-rose-50 border border-rose-100 px-4 py-2 rounded-xl text-center">
+                    {cameraError}
+                  </div>
+                )}
+
+                {(cameraActive || videoPreviewUrl) ? (
+                  <div className="flex flex-col items-center gap-8 w-full">
+                    {/* Top: Camera View & Controls */}
+                    <div className="flex flex-col items-center w-full max-w-xl">
+                      <div className="w-full aspect-[4/3] bg-slate-900 rounded-[2rem] border border-slate-800 shadow-inner overflow-hidden relative flex items-center justify-center">
+                        {videoPreviewUrl ? (
+                          <video key={videoPreviewUrl} src={videoPreviewUrl} controls autoPlay playsInline className="w-full h-full object-cover" />
+                        ) : (
+                          <>
+                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+                            {isRecording && (
+                              <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-2 text-white text-xs font-bold border border-white/10">
+                                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+                                <span>RECORDING {formatTimer(recordingSeconds)}</span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Controls below video */}
+                      <div className="mt-6 flex gap-3">
+                        {cameraActive && (
+                          <>
+                            {!isRecording ? (
+                              <button
+                                type="button"
+                                onClick={handleStartRecording}
+                                className="px-6 py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm shadow-lg shadow-rose-500/20 active:scale-95 transition-all flex items-center gap-2"
+                              >
+                                <Video className="w-4 h-4" />
+                                Start Recording
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={handleStopRecording}
+                                className="px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold text-sm shadow-lg active:scale-95 transition-all flex items-center gap-2 animate-pulse"
+                              >
+                                <X className="w-4 h-4" />
+                                Stop Recording
+                              </button>
+                            )}
+                          </>
+                        )}
+
+                        {videoPreviewUrl && (
+                          <button
+                            type="button"
+                            onClick={handleResetVideo}
+                            className="px-6 py-3.5 rounded-2xl border border-slate-200 hover:border-slate-300 text-slate-600 font-bold text-sm bg-white active:scale-95 transition-all flex items-center gap-2"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                            Re-record Video
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bottom: Read aloud scripts (Full Width Wide Box) */}
+                    <div className="w-full flex flex-col gap-4 bg-white border border-slate-200/40 rounded-3xl p-6 md:p-8 shadow-sm">
+                      {/* Language Selection Header */}
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span className="text-xs font-black uppercase tracking-wider text-slate-400">Select Script Language</span>
+                        <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/40">
+                          <button
+                            type="button"
+                            onClick={() => setScriptLanguage('english')}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${scriptLanguage === 'english' ? 'bg-white text-primary-500 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                          >
+                            English
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setScriptLanguage('hindi')}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${scriptLanguage === 'hindi' ? 'bg-white text-primary-500 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                          >
+                            Hindi
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Selected Script */}
+                      {scriptLanguage === 'english' ? (
+                        <div>
+                          <h4 className="text-[11px] font-black uppercase tracking-widest text-[#2563eb] mb-2">Please read aloud (English):</h4>
+                          <p className="text-sm text-slate-800 leading-relaxed font-bold italic bg-blue-50/50 border border-blue-100/50 p-5 rounded-2xl">
+                            "{englishScript}"
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <h4 className="text-[11px] font-black uppercase tracking-widest text-[#7c3aed] mb-2">कृपया जोर से पढ़ें (Hindi):</h4>
+                          <p className="text-sm text-slate-800 leading-relaxed font-medium bg-purple-50/50 border border-purple-100/30 p-5 rounded-2xl">
+                            "{hindiScript}"
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  // Initial: Open Lens button
+                  <div className="flex flex-col items-center">
+                    <button
+                      type="button"
+                      onClick={handleOpenLens}
+                      className="group flex flex-col items-center gap-3 py-6 px-8 bg-white hover:bg-slate-50 text-primary-500 rounded-2xl shadow-xl transition-all active:scale-95 border border-slate-200/50"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center text-primary-500 shadow-md group-hover:scale-105 transition-all">
+                        <Camera className="w-6 h-6" />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400 group-hover:text-primary-500 transition-colors">Start Verification Camera</span>
                     </button>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 

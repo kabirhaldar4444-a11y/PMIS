@@ -35,7 +35,7 @@ const PMISLogo = ({ variant = 'default', className = '' }) => {
     >
       <img
         src={pmisLogo}
-        alt="PMIS"
+        alt="PMI Services"
         className={`${config.img} object-contain select-none pointer-events-none drop-shadow-sm`}
         draggable={false}
       />
