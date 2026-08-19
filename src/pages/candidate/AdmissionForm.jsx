@@ -161,7 +161,7 @@ const AdmissionForm = () => {
     fullName: '',
     email: '',
     phone: '',
-    courseName: '',
+    courseName: 'professional skill training programme',
     pincode: '',
     state: '',
     city: '',
@@ -519,18 +519,13 @@ const AdmissionForm = () => {
   // Form step controls
   const handleProceedToStep2 = (e) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.courseName) {
+    if (!formData.fullName || !formData.email || !formData.courseName) {
       showAlert('Please fill in all details.', 'warning');
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       showAlert('Please enter a valid email address.', 'error');
-      return;
-    }
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      showAlert('Please enter a valid 10-digit mobile number.', 'error');
       return;
     }
     setStep(2);
@@ -569,7 +564,6 @@ const AdmissionForm = () => {
   }) => {
     try {
       const locationStr = [city, state].filter(Boolean).join(', ');
-      const formattedPhone = phone.startsWith('+91') ? phone : `+91 ${phone.replace(/\D/g, '')}`;
 
       const messageContent = `
 ----------------------------------------
@@ -582,7 +576,6 @@ APPLICATION & CANDIDATE DETAILS:
 • Application Status: Pending Admin Approval
 • Full Name: ${fullName}
 • Email ID: ${email}
-• Phone: ${formattedPhone}
 • Course Name: ${courseName}
 • PIN Code: ${pincode}
 • Location: ${locationStr || 'N/A'}
@@ -1084,28 +1077,7 @@ Submitted via PMI Services Exam Portal
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">
-                Phone Number <span className="text-red-500 font-bold text-xs ml-0.5">*</span>
-              </label>
-              <div className="flex rounded-xl bg-white/40 border border-slate-200/50 backdrop-blur-sm focus-within:bg-white focus-within:border-primary-500 focus-within:ring-4 focus-within:ring-primary-500/10 transition-all duration-300 overflow-hidden">
-                <div className="flex items-center justify-center px-4 bg-slate-100/90 border-r border-slate-200/50 text-slate-800 font-black text-sm tracking-wider">
-                  +91
-                </div>
-                <div className="relative flex-1">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
-                  <input
-                    type="tel"
-                    required
-                    maxLength={10}
-                    placeholder="10-digit number"
-                    className="w-full bg-transparent pl-12 pr-4 py-4 outline-none text-slate-800 placeholder:text-slate-400 font-medium"
-                    value={formData.phone}
-                    onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                  />
-                </div>
-              </div>
-            </div>
+
 
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">
@@ -1116,10 +1088,10 @@ Submitted via PMI Services Exam Portal
                 <input
                   type="text"
                   required
+                  readOnly
                   placeholder="Enter the course you're applying for"
-                  className="input-premium w-full pl-12 bg-white/40 focus:bg-white"
+                  className="input-premium w-full pl-12 bg-slate-100/70 text-slate-600 cursor-not-allowed focus:border-slate-200 focus:ring-0"
                   value={formData.courseName}
-                  onChange={e => setFormData({ ...formData, courseName: e.target.value })}
                 />
               </div>
             </div>

@@ -602,7 +602,6 @@ CANDIDATE INFORMATION:
 ──────────────────────
 • Full Name: ${candidateData.fullName}
 • Email ID: ${candidateData.email}
-• Mobile No: +91 ${candidateData.phone}
 • PIN Code: ${candidateData.pincode}
 • Location: ${candidateData.city}, ${candidateData.state}
 
