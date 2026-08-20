@@ -43,6 +43,7 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
    // New Exam Local State
    const [newExamTitle, setNewExamTitle] = useState('');
    const [newExamDuration, setNewExamDuration] = useState('');
+   const [newMarksPerQuestion, setNewMarksPerQuestion] = useState('5');
 
    // Add Question Local State
    const [newQuestion, setNewQuestion] = useState({
@@ -62,6 +63,7 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
    const [editingExam, setEditingExam] = useState(null);
    const [editExamTitle, setEditExamTitle] = useState('');
    const [editExamDuration, setEditExamDuration] = useState('');
+   const [editMarksPerQuestion, setEditMarksPerQuestion] = useState('5');
 
    useEffect(() => {
       fetchExams();
@@ -93,12 +95,14 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
       try {
          const { error } = await supabase.from('exams').insert({
             title: newExamTitle.trim(),
-            duration: parseInt(newExamDuration)
+            duration: parseInt(newExamDuration),
+            marks_per_question: parseInt(newMarksPerQuestion) || 5
          });
          if (error) throw error;
          showAlert('New exam created effectively.', 'success');
          setNewExamTitle('');
          setNewExamDuration('');
+         setNewMarksPerQuestion('5');
          fetchExams();
       } catch (e) {
          showAlert(e.message, 'error');
@@ -128,6 +132,7 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
       setEditingExam(exam);
       setEditExamTitle(exam.title);
       setEditExamDuration(exam.duration);
+      setEditMarksPerQuestion(exam.marks_per_question !== undefined && exam.marks_per_question !== null ? exam.marks_per_question.toString() : '5');
    };
 
    const handleUpdateExam = async () => {
@@ -139,7 +144,8 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
       try {
          const { error } = await supabase.from('exams').update({
             title: editExamTitle.trim(),
-            duration: parseInt(editExamDuration)
+            duration: parseInt(editExamDuration),
+            marks_per_question: parseInt(editMarksPerQuestion) || 5
          }).eq('id', editingExam.id);
 
          if (error) throw error;
@@ -959,10 +965,15 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
                   <label className="text-[10px] uppercase font-black text-slate-400 mb-1.5 ml-2 block tracking-widest">Exam Title</label>
                   <input className="input-premium w-full !bg-slate-50 !py-3.5 !rounded-2xl border-transparent hover:border-slate-200" placeholder="e.g. Advanced Data Structures Midterm" value={newExamTitle} onChange={e => setNewExamTitle(e.target.value)} />
                </div>
-               <div className="w-full md:w-48 xl:w-64">
+               <div className="w-full md:w-32 xl:w-48">
                   <h3 className="font-bold text-slate-800 text-xl tracking-tight mb-4 opacity-0 hidden md:block">Spacer</h3>
-                  <label className="text-[10px] uppercase font-black text-slate-400 mb-1.5 ml-2 block tracking-widest">Duration (Minutes)</label>
+                  <label className="text-[10px] uppercase font-black text-slate-400 mb-1.5 ml-2 block tracking-widest">Duration (Mins)</label>
                   <input className="input-premium w-full !bg-slate-50 !py-3.5 !rounded-2xl border-transparent hover:border-slate-200" type="number" placeholder="e.g. 60" value={newExamDuration} onChange={e => setNewExamDuration(e.target.value)} />
+               </div>
+               <div className="w-full md:w-32 xl:w-48">
+                  <h3 className="font-bold text-slate-800 text-xl tracking-tight mb-4 opacity-0 hidden md:block">Spacer</h3>
+                  <label className="text-[10px] uppercase font-black text-slate-400 mb-1.5 ml-2 block tracking-widest">Marks Per Q</label>
+                  <input className="input-premium w-full !bg-slate-50 !py-3.5 !rounded-2xl border-transparent hover:border-slate-200" type="number" placeholder="e.g. 5" value={newMarksPerQuestion} onChange={e => setNewMarksPerQuestion(e.target.value)} />
                </div>
             </div>
             <button disabled={processing} onClick={handleCreateExam} className="bg-[#825dfa] hover:bg-[#6e4ade] text-white font-bold py-4 px-10 rounded-2xl shadow-xl shadow-purple-500/20 transition-all shrink-0 mt-auto flex items-center gap-2 self-stretch md:self-auto h-max">
@@ -1105,6 +1116,15 @@ const ManageQuestions = ({ examId: initialExamId, onBack, onSubViewChange }) => 
                               className="input-premium w-full !bg-slate-50 !rounded-2xl"
                               value={editExamDuration}
                               onChange={e => setEditExamDuration(e.target.value)}
+                           />
+                        </div>
+                        <div>
+                           <label className="text-[10px] uppercase font-black text-slate-400 mb-1.5 ml-2 block tracking-widest">Marks Per Question</label>
+                           <input
+                              type="number"
+                              className="input-premium w-full !bg-slate-50 !rounded-2xl"
+                              value={editMarksPerQuestion}
+                              onChange={e => setEditMarksPerQuestion(e.target.value)}
                            />
                         </div>
 

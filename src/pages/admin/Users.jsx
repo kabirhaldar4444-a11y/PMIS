@@ -9,6 +9,72 @@ import {
 import { useAlert } from '../../context/AlertProvider';
 import { useAuth } from '../../context/AuthContext';
 
+// Helper to calculate submission scores, total marks, percentage, overrides, and question marks
+const getSubmissionMarksDetails = (sub, pendingChanges) => {
+  const marksPerQ = sub.marks_per_question || sub.exams?.marks_per_question || 5;
+  
+  const qMarks = pendingChanges?.question_marks ?? sub.question_marks ?? {};
+  const finalScoreOverride = pendingChanges?.final_score_override !== undefined 
+    ? pendingChanges.final_score_override 
+    : (sub.final_score_override !== null ? sub.final_score_override : null);
+    
+  const legacyScoreOverride = pendingChanges?.admin_score_override !== undefined
+    ? pendingChanges.admin_score_override
+    : (sub.admin_score_override !== null ? sub.admin_score_override : null);
+
+  let calculatedScore = pendingChanges?.calculated_score ?? sub.calculated_score;
+  let calculatedTotal = pendingChanges?.calculated_total ?? sub.calculated_total;
+
+  if (calculatedScore === null || calculatedScore === undefined) {
+    calculatedScore = sub.score * marksPerQ;
+  }
+  if (calculatedTotal === null || calculatedTotal === undefined) {
+    calculatedTotal = sub.total_questions * marksPerQ;
+  }
+
+  let displayScore = calculatedScore;
+  let displayTotal = calculatedTotal;
+  let isOverridden = false;
+  let overrideSource = ''; // 'final', 'question', or 'legacy'
+
+  if (finalScoreOverride !== null) {
+    displayScore = finalScoreOverride;
+    isOverridden = true;
+    overrideSource = 'final';
+  } else if (Object.keys(qMarks).length > 0) {
+    displayScore = calculatedScore;
+    displayTotal = calculatedTotal;
+    const hasQOverride = Object.values(qMarks).some(q => q.obtained !== undefined || q.assigned !== undefined);
+    if (hasQOverride) {
+      isOverridden = true;
+      overrideSource = 'question';
+    }
+  } else if (legacyScoreOverride !== null) {
+    displayScore = legacyScoreOverride * marksPerQ;
+    isOverridden = true;
+    overrideSource = 'legacy';
+  }
+
+  const percentage = displayTotal > 0 ? Math.round((displayScore / displayTotal) * 100) : 0;
+
+  return {
+    marksPerQ,
+    totalQuestions: sub.total_questions,
+    correctAnswers: sub.score,
+    calculatedScore,
+    calculatedTotal,
+    displayScore,
+    displayTotal,
+    isOverridden,
+    overrideSource,
+    percentage,
+    qMarks,
+    finalScoreOverride,
+    legacyScoreOverride,
+    isReleased: pendingChanges?.is_released !== undefined ? pendingChanges.is_released : sub.is_released
+  };
+};
+
 const Users = () => {
   const { showAlert } = useAlert();
   const { profile } = useAuth();
@@ -36,6 +102,7 @@ const Users = () => {
   const [viewingBreakdown, setViewingBreakdown] = useState(null);
   const [breakdownQuestions, setBreakdownQuestions] = useState([]);
   const [loadingBreakdown, setLoadingBreakdown] = useState(false);
+  const [breakdownOnSave, setBreakdownOnSave] = useState(null);
 
   const fetchBreakdownQuestions = async (examId) => {
     setLoadingBreakdown(true);
@@ -53,8 +120,9 @@ const Users = () => {
     }
   };
 
-  const handleOpenBreakdown = (sub) => {
+  const handleOpenBreakdown = (sub, onSaveSuccess) => {
     setViewingBreakdown(sub);
+    setBreakdownOnSave(() => onSaveSuccess);
     fetchBreakdownQuestions(sub.exam_id);
   };
 
@@ -161,19 +229,23 @@ const Users = () => {
 
       if (error) throw error;
 
-      // Handle Submission Overrides if any
-      if (updatedData.submissionChanges && Object.keys(updatedData.submissionChanges).length > 0) {
-        const changes = updatedData.submissionChanges;
-        for (const subId in changes) {
-          // Only send specific allowed columns for submissions
-          const subUpdate = {};
-          if (changes[subId].admin_score_override !== undefined) subUpdate.admin_score_override = changes[subId].admin_score_override;
-          if (changes[subId].is_released !== undefined) subUpdate.is_released = changes[subId].is_released;
-
-          const { error: subError } = await supabase
-            .from('submissions')
-            .update(subUpdate)
-            .eq('id', subId);
+       // Handle Submission Overrides if any
+       if (updatedData.submissionChanges && Object.keys(updatedData.submissionChanges).length > 0) {
+         const changes = updatedData.submissionChanges;
+         for (const subId in changes) {
+           // Only send specific allowed columns for submissions
+           const subUpdate = {};
+           if (changes[subId].admin_score_override !== undefined) subUpdate.admin_score_override = changes[subId].admin_score_override;
+           if (changes[subId].final_score_override !== undefined) subUpdate.final_score_override = changes[subId].final_score_override;
+           if (changes[subId].question_marks !== undefined) subUpdate.question_marks = changes[subId].question_marks;
+           if (changes[subId].calculated_score !== undefined) subUpdate.calculated_score = changes[subId].calculated_score;
+           if (changes[subId].calculated_total !== undefined) subUpdate.calculated_total = changes[subId].calculated_total;
+           if (changes[subId].is_released !== undefined) subUpdate.is_released = changes[subId].is_released;
+ 
+           const { error: subError } = await supabase
+             .from('submissions')
+             .update(subUpdate)
+             .eq('id', subId);
 
           if (subError) {
             console.error('Submission update error:', subError);
@@ -381,7 +453,14 @@ const Users = () => {
         exams={exams}
         onClose={() => setEditingUser(null)}
         onSave={handleUpdateProfile}
-        onViewBreakdown={handleOpenBreakdown}
+        onViewBreakdown={(sub) => {
+          handleOpenBreakdown(sub, (qMarks, score, total) => {
+            updateSubChange(sub.id, 'question_marks', qMarks);
+            updateSubChange(sub.id, 'calculated_score', score);
+            updateSubChange(sub.id, 'calculated_total', total);
+            updateSubChange(sub.id, 'final_score_override', null);
+          });
+        }}
       />
 
       <AnimatePresence>
@@ -407,6 +486,7 @@ const Users = () => {
         submission={viewingBreakdown}
         questions={breakdownQuestions}
         loading={loadingBreakdown}
+        onSave={breakdownOnSave}
       />
 
       <DocumentViewerOverlay
@@ -774,7 +854,7 @@ const EditCandidateModal = ({ user, exams, onClose, onSave, onViewBreakdown }) =
     try {
       const { data } = await supabase
         .from('submissions')
-        .select('*, exams(title, duration)')
+        .select('*, exams(title, duration, marks_per_question)')
         .eq('user_id', user.id);
       setSubmissions(data || []);
     } catch (err) {
@@ -799,9 +879,10 @@ const EditCandidateModal = ({ user, exams, onClose, onSave, onViewBreakdown }) =
   };
 
   const handleAdjustMark = (sub, amount) => {
-    const currentPrice = getSubValue(sub, 'admin_score_override') ?? sub.score;
-    const nextValue = Math.max(0, Math.min(sub.total_questions, currentPrice + amount));
-    updateSubChange(sub.id, 'admin_score_override', nextValue);
+    const details = getSubmissionMarksDetails(sub, submissionChanges[sub.id]);
+    const currentScore = details.displayScore;
+    const nextValue = Math.max(0, Math.min(details.displayTotal, currentScore + amount));
+    updateSubChange(sub.id, 'final_score_override', nextValue);
   };
 
   if (!user) return null;
@@ -1136,80 +1217,127 @@ const EditCandidateModal = ({ user, exams, onClose, onSave, onViewBreakdown }) =
                 ) : (
                   <div className="space-y-6">
                     {submissions.map(sub => {
-                      const currentScore = getSubValue(sub, 'admin_score_override') ?? sub.score;
-                      const isCurrentlyReleased = getSubValue(sub, 'is_released');
-                      const hasChanges = (getSubValue(sub, 'admin_score_override') !== sub.score && getSubValue(sub, 'admin_score_override') !== undefined) ||
-                        (getSubValue(sub, 'is_released') !== sub.is_released);
+                      const details = getSubmissionMarksDetails(sub, submissionChanges[sub.id]);
+                      const hasChanges = (submissionChanges[sub.id]?.final_score_override !== undefined) ||
+                        (submissionChanges[sub.id]?.question_marks !== undefined) ||
+                        (submissionChanges[sub.id]?.is_released !== undefined);
 
                       return (
-                        <div key={sub.id} className="bg-white p-8 rounded-3xl border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
-                          <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
-                              <CheckCircle className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-3 mb-1">
-                                <h4 className="font-black text-xl text-slate-800 leading-none">{sub.exams?.title || 'Examination'}</h4>
-                                {hasChanges && <span className="px-2 py-0.5 bg-amber-100 text-amber-600 text-[10px] font-black uppercase rounded shadow-sm">PENDING SAVE</span>}
+                        <div key={sub.id} className="bg-white p-8 rounded-3xl border border-slate-100 flex flex-col gap-6 shadow-sm">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-5">
+                              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+                                <CheckCircle className="w-6 h-6" />
                               </div>
-                              <p className="text-xs text-slate-500 font-medium tracking-tight">
-                                Original System Score: <strong className="text-slate-800">{sub.score} / {sub.total_questions}</strong>
-                              </p>
+                              <div>
+                                <div className="flex items-center gap-3 mb-1">
+                                  <h4 className="font-black text-xl text-slate-800 leading-none">{sub.exams?.title || 'Examination'}</h4>
+                                  {hasChanges && <span className="px-2 py-0.5 bg-amber-100 text-amber-600 text-[10px] font-black uppercase rounded shadow-sm">PENDING SAVE</span>}
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                    Original Score: {sub.score} / {sub.total_questions}
+                                  </span>
+                                  {details.isOverridden && (
+                                    <>
+                                      <div className="w-1 h-1 bg-slate-300 rounded-full" />
+                                      <span className="px-2 py-0.5 bg-rose-50 text-rose-500 text-[9px] font-black uppercase tracking-wider rounded border border-rose-100">
+                                        {details.overrideSource === 'question' ? 'Question Overrides' : 'Score Overridden'}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl font-outfit font-black text-slate-800">{details.displayScore}</span>
+                              <span className="text-slate-400 font-medium text-lg">/</span>
+                              <span className="text-slate-400 font-semibold text-lg">{details.displayTotal}</span>
+                              <span className="ml-2 px-3 py-1 bg-blue-50 text-blue-600 text-xs font-black rounded-xl">
+                                {details.percentage}%
+                              </span>
                             </div>
                           </div>
 
-                          <div className="flex flex-col sm:flex-row items-center gap-6 md:pl-8 md:border-l border-slate-100 w-full md:w-auto">
-                            <div className="flex flex-col items-center">
-                              <div className="flex items-center gap-6 mb-2">
-                                <div className="text-center">
-                                  <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 block mb-1">FINAL MARKS</label>
-                                  <div className="flex items-center bg-slate-50 rounded-full border-2 border-slate-100 p-1 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400/50 transition-all">
-                                    <button onClick={() => handleAdjustMark(sub, -1)} className="w-8 h-8 rounded-full hover:bg-white hover:text-blue-600 hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-black text-lg">-</button>
-                                    <input
-                                      type="number"
-                                      className="w-16 text-center bg-transparent font-black text-xl text-slate-800 focus:outline-none placeholder:text-slate-300"
-                                      placeholder="0"
-                                      value={currentScore === 0 ? '0' : (currentScore || '')}
-                                      onChange={(e) => {
-                                        const val = e.target.value;
-                                        if (val === '') {
-                                          updateSubChange(sub.id, 'admin_score_override', 0);
-                                        } else {
-                                          const num = parseInt(val);
-                                          if (!isNaN(num)) {
-                                            updateSubChange(sub.id, 'admin_score_override', Math.max(0, Math.min(sub.total_questions, num)));
-                                          }
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                            <div>
+                              <span className="block text-[8px] font-black uppercase tracking-widest text-slate-400">Total Questions</span>
+                              <span className="text-sm font-bold text-slate-800">{details.totalQuestions}</span>
+                            </div>
+                            <div>
+                              <span className="block text-[8px] font-black uppercase tracking-widest text-slate-400">Marks Per Q</span>
+                              <span className="text-sm font-bold text-slate-800">{details.marksPerQ}</span>
+                            </div>
+                            <div>
+                              <span className="block text-[8px] font-black uppercase tracking-widest text-slate-400">Correct Answers</span>
+                              <span className="text-sm font-bold text-slate-800">{details.correctAnswers}</span>
+                            </div>
+                            <div>
+                              <span className="block text-[8px] font-black uppercase tracking-widest text-slate-400">Final Score</span>
+                              <span className="text-sm font-bold text-slate-800">{details.displayScore} / {details.displayTotal}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-2">
+                            <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-start">
+                              <div className="text-left">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 block mb-1">Direct Override</label>
+                                <div className="flex items-center bg-slate-50 rounded-full border-2 border-slate-100 p-1 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400/50 transition-all w-fit">
+                                  <button onClick={() => handleAdjustMark(sub, -1)} className="w-8 h-8 rounded-full hover:bg-white hover:text-blue-600 hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-black text-lg">-</button>
+                                  <input
+                                    type="number"
+                                    className="w-16 text-center bg-transparent font-black text-xl text-slate-800 focus:outline-none placeholder:text-slate-300"
+                                    placeholder="0"
+                                    value={details.displayScore === 0 ? '0' : (details.displayScore || '')}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val === '') {
+                                        updateSubChange(sub.id, 'final_score_override', 0);
+                                      } else {
+                                        const num = parseInt(val);
+                                        if (!isNaN(num)) {
+                                          updateSubChange(sub.id, 'final_score_override', Math.max(0, Math.min(details.displayTotal, num)));
                                         }
-                                      }}
-                                    />
-                                    <button onClick={() => handleAdjustMark(sub, 1)} className="w-8 h-8 rounded-full hover:bg-white hover:text-blue-600 hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-black text-lg">+</button>
-                                  </div>
+                                      }
+                                    }}
+                                  />
+                                  <button onClick={() => handleAdjustMark(sub, 1)} className="w-8 h-8 rounded-full hover:bg-white hover:text-blue-600 hover:shadow-sm flex items-center justify-center text-slate-500 transition-all font-black text-lg">+</button>
                                 </div>
-                                {hasChanges && (
-                                  <button onClick={() => {
-                                    updateSubChange(sub.id, 'admin_score_override', sub.score);
-                                    updateSubChange(sub.id, 'is_released', sub.is_released);
-                                  }} className="text-[10px] font-black uppercase tracking-widest text-[#94a3b8] hover:text-blue-500 transition-all mt-2 underline underline-offset-4">Reset Changes</button>
-                                )}
                               </div>
+                              {hasChanges && (
+                                <button onClick={() => {
+                                  updateSubChange(sub.id, 'final_score_override', null);
+                                  updateSubChange(sub.id, 'admin_score_override', null);
+                                  updateSubChange(sub.id, 'question_marks', {});
+                                  updateSubChange(sub.id, 'calculated_score', sub.score * (sub.marks_per_question || 5));
+                                  updateSubChange(sub.id, 'calculated_total', sub.total_questions * (sub.marks_per_question || 5));
+                                  updateSubChange(sub.id, 'is_released', sub.is_released);
+                                }} className="text-[10px] font-black uppercase tracking-widest text-[#94a3b8] hover:text-blue-500 transition-all underline underline-offset-4">Reset Changes</button>
+                              )}
                             </div>
 
-                            <div className="flex flex-col gap-2 w-full sm:w-80">
+                            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                               <button 
                                 type="button"
-                                onClick={() => onViewBreakdown(sub)}
-                                className="px-6 py-3 bg-white hover:bg-slate-50 text-slate-600 font-bold rounded-2xl border border-slate-200 transition-all text-xs flex items-center justify-center gap-2 group"
+                                onClick={() => onViewBreakdown(sub, (qMarks, score, total) => {
+                                  updateSubChange(sub.id, 'question_marks', qMarks);
+                                  updateSubChange(sub.id, 'calculated_score', score);
+                                  updateSubChange(sub.id, 'calculated_total', total);
+                                  updateSubChange(sub.id, 'final_score_override', null);
+                                })}
+                                className="px-6 py-3 bg-white hover:bg-slate-50 text-slate-600 font-bold rounded-2xl border border-slate-200 transition-all text-xs flex items-center justify-center gap-2 group w-full sm:w-auto"
                               >
                                 <Eye className="w-4 h-4 group-hover:text-blue-500 transition-colors" /> Question Breakdowns
                               </button>
                               <button
-                                onClick={() => updateSubChange(sub.id, 'is_released', !isCurrentlyReleased)}
-                                className={`px-6 py-3 font-black rounded-2xl transition-all text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 ${isCurrentlyReleased
+                                onClick={() => updateSubChange(sub.id, 'is_released', !details.isReleased)}
+                                className={`px-6 py-3 font-black rounded-2xl transition-all text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 w-full sm:w-auto ${details.isReleased
                                     ? 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600 ring-2 ring-emerald-500/20'
                                     : 'bg-slate-900 text-white shadow-slate-900/30 hover:bg-slate-800'
                                   }`}
                               >
-                                {isCurrentlyReleased ? (
+                                {details.isReleased ? (
                                   <><CheckCircle className="w-4 h-4" /> Result Live</>
                                 ) : (
                                   <><Send className="w-4 h-4" /> Publish Result</>
@@ -1350,7 +1478,7 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc, onViewBreakdown }) => {
     try {
       const { data } = await supabase
         .from('submissions')
-        .select('*, exams(title)')
+        .select('*, exams(title, marks_per_question)')
         .eq('user_id', user.id);
       setSubmissions(data || []);
     } catch (error) {
@@ -1473,8 +1601,15 @@ const ViewCandidateDrawer = ({ user, onClose, onViewDoc, onViewBreakdown }) => {
                       <MockResultCard 
                         key={sub.id} 
                         submission={sub} 
-                        onViewBreakdown={() => onViewBreakdown(sub)} 
-                        onUpdateScore={(newScore) => handleUpdateSubmission(sub.id, { admin_score_override: newScore })}
+                        onViewBreakdown={() => onViewBreakdown(sub, async (qMarks, score, total) => {
+                          await handleUpdateSubmission(sub.id, {
+                            question_marks: qMarks,
+                            calculated_score: score,
+                            calculated_total: total,
+                            final_score_override: null
+                          });
+                        })} 
+                        onUpdateScore={(newScore) => handleUpdateSubmission(sub.id, { final_score_override: newScore })}
                         onToggleRelease={() => handleUpdateSubmission(sub.id, { is_released: !sub.is_released })}
                       />
                     ))}
@@ -1589,74 +1724,111 @@ const DocumentWidget = ({ label, url, onView, restricted, isVideo }) => (
 
 // UI Only Match to the exact design provided by screenshots for Results
 const MockResultCard = ({ submission, onViewBreakdown, onUpdateScore, onToggleRelease }) => {
-  const currentScore = submission.admin_score_override ?? submission.score;
-  const isReleased = submission.is_released;
+  const details = getSubmissionMarksDetails(submission, null);
 
   return (
-    <div className="bg-white p-6 rounded-3xl border border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-          <CheckCircle className="w-5 h-5" />
+    <div className="bg-white p-6 rounded-3xl border border-slate-100 flex flex-col gap-6 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+            <CheckCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-black text-lg text-slate-800 leading-tight">{submission.exams?.title || 'Unknown Exam'}</h4>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-slate-500 font-medium">
+                Original Score: {submission.score} / {submission.total_questions}
+              </span>
+              {details.isOverridden && (
+                <>
+                  <div className="w-1 h-1 bg-slate-300 rounded-full" />
+                  <span className="px-2 py-0.5 bg-rose-50 text-rose-500 text-[9px] font-black uppercase tracking-wider rounded border border-rose-100">
+                    {details.overrideSource === 'question' ? 'Question Overrides' : 'Score Overridden'}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-        <div>
-          <h4 className="font-black text-lg text-slate-800 leading-tight">{submission.exams?.title || 'Unknown Exam'}</h4>
-          <p className="text-sm text-slate-500 font-medium mt-1">
-            Original System Score: <strong className="text-slate-800">{submission.score} / {submission.total_questions}</strong>
-          </p>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-outfit font-black text-slate-800">{details.displayScore}</span>
+          <span className="text-slate-400 font-medium text-lg">/</span>
+          <span className="text-slate-400 font-semibold text-lg">{details.displayTotal}</span>
+          <span className="ml-2 px-3 py-1 bg-blue-50 text-blue-600 text-xs font-black rounded-xl">
+            {details.percentage}%
+          </span>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 md:pl-6 md:border-l border-slate-100 w-full md:w-auto">
-        <div className="flex flex-col items-center">
-          <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-2">FINAL MARKS</label>
-          <div className="flex items-center bg-white rounded-full border-2 border-slate-100 shadow-inner p-1">
-            <button 
-              onClick={() => onUpdateScore(Math.max(0, currentScore - 1))}
-              className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors"
-            >
-              -
-            </button>
-            <input
-              type="number"
-              className="w-12 text-center bg-transparent font-black text-xl text-slate-800 focus:outline-none placeholder:text-slate-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              value={currentScore}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === '') {
-                  onUpdateScore(0);
-                } else {
-                  const num = parseInt(val);
-                  if (!isNaN(num)) {
-                    onUpdateScore(Math.max(0, Math.min(submission.total_questions || 100, num)));
-                  }
-                }
-              }}
-            />
-            <button 
-              onClick={() => onUpdateScore(Math.min(submission.total_questions || 100, currentScore + 1))}
-              className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors"
-            >
-              +
-            </button>
-          </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+        <div>
+          <span className="block text-[8px] font-black uppercase tracking-widest text-slate-400">Total Questions</span>
+          <span className="text-sm font-bold text-slate-800">{details.totalQuestions}</span>
         </div>
-        <div className="flex flex-col gap-2 w-full sm:w-auto">
+        <div>
+          <span className="block text-[8px] font-black uppercase tracking-widest text-slate-400">Marks Per Q</span>
+          <span className="text-sm font-bold text-slate-800">{details.marksPerQ}</span>
+        </div>
+        <div>
+          <span className="block text-[8px] font-black uppercase tracking-widest text-slate-400">Correct Answers</span>
+          <span className="text-sm font-bold text-slate-800">{details.correctAnswers}</span>
+        </div>
+        <div>
+          <span className="block text-[8px] font-black uppercase tracking-widest text-slate-400">Final Score</span>
+          <span className="text-sm font-bold text-slate-800">{details.displayScore} / {details.displayTotal}</span>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-2">
+        <div className="flex items-center bg-white rounded-full border-2 border-slate-100 shadow-inner p-1 w-fit">
+          <button 
+            onClick={() => onUpdateScore(Math.max(0, details.displayScore - 1))}
+            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors font-black text-lg"
+          >
+            -
+          </button>
+          <input
+            type="number"
+            className="w-12 text-center bg-transparent font-black text-xl text-slate-800 focus:outline-none placeholder:text-slate-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            value={details.displayScore}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === '') {
+                onUpdateScore(0);
+              } else {
+                const num = parseInt(val);
+                if (!isNaN(num)) {
+                  onUpdateScore(Math.max(0, Math.min(details.displayTotal || 250, num)));
+                }
+              }
+            }}
+          />
+          <button 
+            onClick={() => onUpdateScore(Math.min(details.displayTotal || 250, details.displayScore + 1))}
+            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors font-black text-lg"
+          >
+            +
+          </button>
+        </div>
+        
+        <div className="flex gap-3 w-full md:w-auto">
           <button 
             type="button"
             onClick={onViewBreakdown}
-            className="px-6 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-xl border border-blue-200 transition-colors text-sm flex items-center justify-center gap-2"
+            className="px-6 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-xl border border-blue-200 transition-colors text-sm flex items-center justify-center gap-2 w-full md:w-auto"
           >
             <Eye className="w-4 h-4" /> Question Breakdowns
           </button>
           <button 
             onClick={onToggleRelease}
-            className={`px-6 py-2.5 font-bold rounded-xl shadow-lg transition-colors text-sm flex items-center justify-center gap-2 ${
-              isReleased 
+            className={`px-6 py-2.5 font-bold rounded-xl shadow-lg transition-colors text-sm flex items-center justify-center gap-2 w-full md:w-auto ${
+              submission.is_released 
                 ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30' 
                 : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
             }`}
           >
-            {isReleased ? (
+            {submission.is_released ? (
               <><CheckCircle className="w-4 h-4" /> Result Live</>
             ) : (
               <><Send className="w-4 h-4" /> Publish Score</>
@@ -1669,7 +1841,86 @@ const MockResultCard = ({ submission, onViewBreakdown, onUpdateScore, onToggleRe
 };
 
 // Question Breakdown Viewer Component
-const QuestionBreakdownModal = ({ isOpen, onClose, submission, questions, loading }) => {
+const QuestionBreakdownModal = ({ isOpen, onClose, submission, questions, loading, onSave }) => {
+  const [localQuestionMarks, setLocalQuestionMarks] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  const marksPerQ = submission?.marks_per_question || submission?.exams?.marks_per_question || 5;
+
+  // Initialize local state when modal opens or submission changes
+  useEffect(() => {
+    if (isOpen && submission) {
+      setLocalQuestionMarks(submission.question_marks || {});
+    }
+  }, [isOpen, submission]);
+
+  // Compute question values
+  const getQuestionValues = (idx, isCorrect) => {
+    const qOverride = localQuestionMarks[idx] || {};
+    const assigned = qOverride.assigned !== undefined ? qOverride.assigned : marksPerQ;
+    const obtained = qOverride.obtained !== undefined ? qOverride.obtained : (isCorrect ? assigned : 0);
+    return { assigned, obtained };
+  };
+
+  // Compute totals
+  let computedTotal = 0;
+  let computedObtained = 0;
+  if (questions && questions.length > 0) {
+    questions.forEach((q, idx) => {
+      const isCorrect = (submission?.answers?.[idx] === q.correct_option);
+      const { assigned, obtained } = getQuestionValues(idx, isCorrect);
+      computedTotal += assigned;
+      computedObtained += obtained;
+    });
+  }
+  const computedPercentage = computedTotal > 0 ? Math.round((computedObtained / computedTotal) * 100) : 0;
+
+  const updateLocalMark = (idx, field, rawValue) => {
+    const val = rawValue === '' ? 0 : parseInt(rawValue);
+    if (isNaN(val)) return;
+
+    setLocalQuestionMarks(prev => {
+      const qOverride = { ...(prev[idx] || {}) };
+      const q = questions[idx];
+      const isCorrect = (submission?.answers?.[idx] === q.correct_option);
+
+      let currentAssigned = qOverride.assigned !== undefined ? qOverride.assigned : marksPerQ;
+      let currentObtained = qOverride.obtained !== undefined ? qOverride.obtained : (isCorrect ? currentAssigned : 0);
+
+      if (field === 'assigned') {
+        const nextAssigned = Math.max(1, val);
+        qOverride.assigned = nextAssigned;
+        if (currentObtained > nextAssigned) {
+          qOverride.obtained = nextAssigned;
+        } else {
+          qOverride.obtained = currentObtained;
+        }
+      } else if (field === 'obtained') {
+        qOverride.obtained = Math.max(0, Math.min(currentAssigned, val));
+        qOverride.assigned = currentAssigned;
+      }
+
+      return {
+        ...prev,
+        [idx]: qOverride
+      };
+    });
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      if (onSave) {
+        await onSave(localQuestionMarks, computedObtained, computedTotal);
+      }
+      onClose();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -1695,9 +1946,13 @@ const QuestionBreakdownModal = ({ isOpen, onClose, submission, questions, loadin
                 </div>
                 <div>
                   <h3 className="text-white font-bold text-lg leading-tight">Question Breakdown</h3>
-                  <p className="text-white/80 text-[11px] font-medium mt-0.5">
-                    {submission?.exams?.title || 'Exam Assessment'}
-                  </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-white/80 text-[11px] font-medium mt-1">
+                    <span>{submission?.exams?.title || 'Exam Assessment'}</span>
+                    <span className="hidden sm:inline">•</span>
+                    <span className="bg-white/20 px-2 py-0.5 rounded font-black text-white">
+                      Current Score: {computedObtained} / {computedTotal} ({computedPercentage}%)
+                    </span>
+                  </div>
                 </div>
               </div>
               <button onClick={onClose} className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors flex shrink-0 mt-1">
@@ -1721,32 +1976,92 @@ const QuestionBreakdownModal = ({ isOpen, onClose, submission, questions, loadin
                   const candidateAnswerIdx = submission?.answers?.[idx];
                   const isCorrect = candidateAnswerIdx === q.correct_option;
                   const isNotAttempted = candidateAnswerIdx === undefined || candidateAnswerIdx === null;
+                  const { assigned, obtained } = getQuestionValues(idx, isCorrect);
 
                   return (
-                    <div key={q.id} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-3">
-                      <div className="flex items-start gap-3 justify-between">
-                        <div className="flex gap-2.5 items-start">
-                          <span className="bg-slate-100 text-slate-800 text-xs font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                            {idx + 1}
-                          </span>
-                          <h4 className="font-bold text-slate-800 text-sm md:text-base leading-snug">
-                            {q.question_text}
-                          </h4>
+                    <div key={q.id} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-4">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-start gap-3 justify-between">
+                          <div className="flex gap-2.5 items-start">
+                            <span className="bg-slate-100 text-slate-800 text-xs font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                              {idx + 1}
+                            </span>
+                            <h4 className="font-bold text-slate-800 text-sm md:text-base leading-snug">
+                              {q.question_text}
+                            </h4>
+                          </div>
+
+                          {isNotAttempted ? (
+                            <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-widest rounded-full shrink-0 border border-slate-200">
+                              Unattempted
+                            </span>
+                          ) : isCorrect ? (
+                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest rounded-full shrink-0 border border-emerald-100">
+                              Correct
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-rose-50 text-rose-600 text-[9px] font-black uppercase tracking-widest rounded-full shrink-0 border border-rose-100">
+                              Incorrect
+                            </span>
+                          )}
                         </div>
 
-                        {isNotAttempted ? (
-                          <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-widest rounded-full shrink-0 border border-slate-200">
-                            Unattempted
-                          </span>
-                        ) : isCorrect ? (
-                          <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest rounded-full shrink-0 border border-emerald-100">
-                            Correct
-                          </span>
-                        ) : (
-                          <span className="px-3 py-1 bg-rose-50 text-rose-600 text-[9px] font-black uppercase tracking-widest rounded-full shrink-0 border border-rose-100">
-                            Incorrect
-                          </span>
-                        )}
+                        {/* Interactive Question Marks Entry Panel */}
+                        <div className="flex items-center gap-4 bg-slate-50 p-2.5 rounded-xl border border-slate-100 w-fit ml-8">
+                          <div className="flex items-center gap-2">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Obtained</label>
+                            <div className="flex items-center bg-white rounded-lg border border-slate-200 p-0.5">
+                              <button 
+                                type="button"
+                                onClick={() => updateLocalMark(idx, 'obtained', obtained - 1)}
+                                className="w-5 h-5 rounded hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors font-bold text-xs"
+                              >
+                                -
+                              </button>
+                              <input
+                                type="number"
+                                className="w-10 text-center bg-transparent font-bold text-xs text-slate-800 focus:outline-none"
+                                value={obtained}
+                                onChange={e => updateLocalMark(idx, 'obtained', e.target.value)}
+                              />
+                              <button 
+                                type="button"
+                                onClick={() => updateLocalMark(idx, 'obtained', obtained + 1)}
+                                className="w-5 h-5 rounded hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors font-bold text-xs"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="h-4 w-px bg-slate-200" />
+                          
+                          <div className="flex items-center gap-2">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Max</label>
+                            <div className="flex items-center bg-white rounded-lg border border-slate-200 p-0.5">
+                              <button 
+                                type="button"
+                                onClick={() => updateLocalMark(idx, 'assigned', assigned - 1)}
+                                className="w-5 h-5 rounded hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors font-bold text-xs"
+                              >
+                                -
+                              </button>
+                              <input
+                                type="number"
+                                className="w-10 text-center bg-transparent font-bold text-xs text-slate-800 focus:outline-none"
+                                value={assigned}
+                                onChange={e => updateLocalMark(idx, 'assigned', e.target.value)}
+                              />
+                              <button 
+                                type="button"
+                                onClick={() => updateLocalMark(idx, 'assigned', assigned + 1)}
+                                className="w-5 h-5 rounded hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors font-bold text-xs"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-8">
@@ -1783,9 +2098,20 @@ const QuestionBreakdownModal = ({ isOpen, onClose, submission, questions, loadin
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-white border-t border-slate-100 flex justify-end shrink-0">
-              <button onClick={onClose} className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-colors">
-                Close Breakdown
+            <div className="p-4 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
+              <button 
+                onClick={onClose} 
+                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                disabled={isSaving}
+                onClick={handleSave} 
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+              >
+                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                Save Breakdown Changes
               </button>
             </div>
           </motion.div>

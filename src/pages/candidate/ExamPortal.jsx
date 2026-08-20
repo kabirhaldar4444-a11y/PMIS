@@ -151,6 +151,7 @@ const ExamPortal = () => {
     setSubmitting(true);
     try {
       const finalScore = calculateScore();
+      const marksPerQ = exam?.marks_per_question ?? 5;
       const { error } = await supabase.from('submissions').insert({
         user_id: user.id,
         exam_id: examId,
@@ -158,7 +159,11 @@ const ExamPortal = () => {
         total_questions: questions.length,
         answers: answersRef.current,
         is_released: false,
-        submitted_at: new Date().toISOString()
+        submitted_at: new Date().toISOString(),
+        marks_per_question: marksPerQ,
+        calculated_score: finalScore * marksPerQ,
+        calculated_total: questions.length * marksPerQ,
+        question_marks: {}
       });
 
       if (error) throw error;
@@ -242,9 +247,9 @@ const ExamPortal = () => {
 
             {/* Exam Format Summary */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-               <SummaryItem icon={<Layout className="w-4 h-4" />} label="Questions" value="40 Total" />
-               <SummaryItem icon={<CheckCircle className="w-4 h-4" />} label="Marks" value="200 (5/ea)" />
-               <SummaryItem icon={<Clock className="w-4 h-4" />} label="Duration" value="120 Mins" />
+               <SummaryItem icon={<Layout className="w-4 h-4" />} label="Questions" value={`${questions.length} Total`} />
+               <SummaryItem icon={<CheckCircle className="w-4 h-4" />} label="Marks" value={`${questions.length * (exam?.marks_per_question ?? 5)} (${exam?.marks_per_question ?? 5}/ea)`} />
+               <SummaryItem icon={<Clock className="w-4 h-4" />} label="Duration" value={`${exam?.duration} Mins`} />
                <SummaryItem icon={<AlertTriangle className="w-4 h-4" />} label="Negative" value="None" />
             </div>
 

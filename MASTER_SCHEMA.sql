@@ -35,8 +35,11 @@ CREATE TABLE IF NOT EXISTS public.exams (
   id uuid default gen_random_uuid() primary key,
   title text not null,
   duration integer not null,
+  marks_per_question integer default 5,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+ALTER TABLE public.exams ADD COLUMN IF NOT EXISTS marks_per_question INTEGER DEFAULT 5;
 
 CREATE TABLE IF NOT EXISTS public.questions (
   id uuid default gen_random_uuid() primary key,
@@ -56,8 +59,19 @@ CREATE TABLE IF NOT EXISTS public.submissions (
   answers jsonb not null,
   is_released boolean default false,
   admin_score_override integer,
+  marks_per_question integer default 5,
+  question_marks jsonb default '{}'::jsonb,
+  final_score_override integer default null,
+  calculated_score integer default null,
+  calculated_total integer default null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS marks_per_question INTEGER DEFAULT 5;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS question_marks JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS final_score_override INTEGER DEFAULT NULL;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS calculated_score INTEGER DEFAULT NULL;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS calculated_total INTEGER DEFAULT NULL;
 
 
 -- 2. Clean and Re-Apply Row Level Security (RLS)

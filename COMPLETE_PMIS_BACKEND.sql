@@ -72,12 +72,17 @@ ALTER TABLE public.profiles ADD  CONSTRAINT profiles_phone_key UNIQUE (phone);
 
 -- 2. exams (Exam Definitions)
 CREATE TABLE IF NOT EXISTS public.exams (
-  id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
-  title       TEXT        NOT NULL,
-  description TEXT,
-  duration    INTEGER     NOT NULL,   -- in minutes
-  created_at  TIMESTAMPTZ DEFAULT TIMEZONE('utc'::TEXT, NOW()) NOT NULL
+  id                 UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  title              TEXT        NOT NULL,
+  description        TEXT,
+  duration           INTEGER     NOT NULL,   -- in minutes
+  marks_per_question INTEGER     DEFAULT 5,
+  created_at         TIMESTAMPTZ DEFAULT TIMEZONE('utc'::TEXT, NOW()) NOT NULL
 );
+
+ALTER TABLE public.exams ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE public.exams ADD COLUMN IF NOT EXISTS created_at  TIMESTAMPTZ DEFAULT TIMEZONE('utc'::TEXT, NOW());
+ALTER TABLE public.exams ADD COLUMN IF NOT EXISTS marks_per_question INTEGER DEFAULT 5;
 
 -- 3. questions (Exam Questions)
 CREATE TABLE IF NOT EXISTS public.questions (
@@ -100,8 +105,23 @@ CREATE TABLE IF NOT EXISTS public.submissions (
   is_released          BOOLEAN     DEFAULT FALSE,
   admin_score_override INTEGER,
   submitted_at         TIMESTAMPTZ,
+  marks_per_question   INTEGER     DEFAULT 5,
+  question_marks       JSONB       DEFAULT '{}'::jsonb,
+  final_score_override INTEGER     DEFAULT NULL,
+  calculated_score     INTEGER     DEFAULT NULL,
+  calculated_total     INTEGER     DEFAULT NULL,
   created_at           TIMESTAMPTZ DEFAULT TIMEZONE('utc'::TEXT, NOW())
 );
+
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS submitted_at         TIMESTAMPTZ;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS admin_score_override INTEGER;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS is_released          BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS created_at           TIMESTAMPTZ DEFAULT TIMEZONE('utc'::TEXT, NOW());
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS marks_per_question   INTEGER DEFAULT 5;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS question_marks       JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS final_score_override INTEGER DEFAULT NULL;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS calculated_score     INTEGER DEFAULT NULL;
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS calculated_total     INTEGER DEFAULT NULL;
 
 
 -- SECTION 3: STORAGE BUCKETS (Public Configuration)
