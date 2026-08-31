@@ -645,8 +645,6 @@ Resilience Coach Training).
 • Training Format: No live sessions. Materials shared once via
 email and are non-transferable.
 • Exam Policy: Multiple attempts are NOT permitted for any exam.
-• Rewards: 80%+ scorers eligible for gifts worth 50k-100k.
-Consent required for promotional use of photograph.
 
 PRIVACY POLICY:
 • Information We Collect: Personal, payment, course progress,
@@ -707,8 +705,7 @@ Submitted via PMI Services Exam Portal
 
       const accessKey =
         import.meta.env.VITE_WEB3FORMS_ACCESS_KEY ||
-        import.meta.env.VITE_WEB3FORMS_KEY ||
-        '4c65807a-e5d0-46e0-9cbd-70d264618cf1';
+        'ef703b89-4260-498d-90f8-5947a84ba4ab';
 
       await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
@@ -717,6 +714,7 @@ Submitted via PMI Services Exam Portal
           access_key: accessKey,
           subject: `Admission Form Submitted — ${fullName}`,
           from_name: 'PMI Services Exam Portal',
+          recipient: import.meta.env.VITE_ADMIN_EMAIL || 'support@pmiservices.org',
           email: email,
           message: messageContent
         })

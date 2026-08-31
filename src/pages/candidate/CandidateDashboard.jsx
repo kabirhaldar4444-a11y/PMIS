@@ -8,7 +8,6 @@ import {
   Clock, 
   Search, 
   History, 
-  CheckCircle, 
   ArrowRight,
   LogOut,
   User,
@@ -229,7 +228,6 @@ const CandidateDashboard = () => {
                     <thead>
                       <tr className="bg-slate-50/80 border-b border-slate-100">
                         <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Examination</th>
-                        <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Date Completed</th>
                         <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Action Status</th>
                       </tr>
                     </thead>
@@ -257,32 +255,15 @@ const CandidateDashboard = () => {
                           <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors group">
                             <td className="px-8 py-6">
                               <div className="font-black text-slate-800 text-base uppercase group-hover:text-primary-600 transition-colors tracking-tight">{sub.exam?.title || 'Unknown Exam'}</div>
-                              {sub.is_released && (
-                                <div className="mt-2 flex items-center gap-1.5">
-                                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                                  <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Score Verified</span>
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-8 py-6">
-                              <div className="inline-flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                                <Clock className="w-3 h-3 text-slate-400" />
-                                <span className="text-xs font-bold text-slate-600">{new Date(sub.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                              </div>
                             </td>
                             <td className="px-8 py-6">
                               <div className="flex items-center gap-4">
                                 {sub.is_released ? (
-                                  <div className="flex flex-wrap items-center gap-4">
-                                    <div className="bg-slate-900 text-white px-4 py-2 rounded-xl flex items-center gap-3 shadow-lg shadow-slate-900/10">
-                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</span>
-                                      <span className="text-xl font-outfit font-black leading-none">
-                                        {displayScore} <span className="text-slate-500 font-medium text-sm mx-0.5">/</span> <span className="text-sm">{displayTotal}</span>
-                                      </span>
-                                    </div>
-                                    <div className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-1.5 shadow-sm">
-                                      <CheckCircle className="w-3 h-3" /> Released
-                                    </div>
+                                  <div className="bg-slate-900 text-white px-4 py-2 rounded-xl flex items-center gap-3 shadow-lg shadow-slate-900/10">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</span>
+                                    <span className="text-xl font-outfit font-black leading-none">
+                                      {displayScore} <span className="text-slate-500 font-medium text-sm mx-0.5">/</span> <span className="text-sm">{displayTotal}</span>
+                                    </span>
                                   </div>
                                 ) : (
                                   <span className="inline-flex items-center gap-2 bg-amber-50 text-amber-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-amber-100">
