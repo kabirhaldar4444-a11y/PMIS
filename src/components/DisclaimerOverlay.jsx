@@ -77,67 +77,42 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                 <div className="bg-slate-50/50 rounded-[2rem] p-8 border border-slate-100/80">
                   <div className="space-y-6 text-slate-600 text-[15px] leading-relaxed">
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Enrollment Process</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>Customers visit the PMI Services website and fill out the Enrollment Form.</li>
-                        <li>After form submission, Our team connects with the customer.</li>
-                        <li>A detailed email is shared explaining the complete process flow and fee structure. Payments may also be accepted directly through an authorized professional expert trainer account, where applicable.</li>
-                      </ul>
+                      <h5 className="font-bold text-slate-800 mb-2">🔎 Step 1: Immediate Admission Confirmation After Payment</h5>
+                      <p>The student onboarding journey begins instantly upon checkout. As soon as a transaction clears our secure platform gateways, our backend servers trigger an Automated Admission Confirmation Notice. Students receive a digital welcome package containing their permanent user profile IDs, platform workspace access routes, and an overview map of their target educational tracks.</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Process Explanation & Confirmation</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>During the call, the team explains the course structure, learning journey, and assessment-to-certification flow.</li>
-                        <li>The customer then confirms their participation in the program.</li>
-                      </ul>
+                      <h5 className="font-bold text-slate-800 mb-2">📌 Step 2: Mandatory Document KYC Verification</h5>
+                      <p>In strict compliance with structural risk management policies, all enrolled learners must verify their commercial profile data. Students are required to securely upload their valid identity documentation (such as government-issued photo IDs or institutional cards) to our encrypted verification portal. This step ensures that final completion documentation matches legal corporate profiles accurately.</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Fee Payment</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>Upon successful completion of the fee payment, a GST-compliant invoice is issued within 6 hours.</li>
-                        <li>Pre-examination study materials are shared with the learner within 24 hours.</li>
-                      </ul>
+                      <h5 className="font-bold text-slate-800 mb-2">🔎 Step 3: Secure Video KYC Authentication</h5>
+                      <p>To prevent platform identity theft, proxy testing, and transaction chargeback vectors, students must execute an automated Video KYC Verification step. Using an integrated web interface, learners record a brief, self-directed biometric identity check matching their uploaded documents. This establishes an unalterable audit trail for security purposes.</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Pre-Exam</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>A Pre-Exam is conducted within 24–48 hours of fee payment.</li>
-                        <li>This exam assesses the customer’s initial understanding of the selected domain.</li>
-                        <li>Before the exam, the Guidance Team connects to explain the exam process.</li>
-                      </ul>
+                      <h5 className="font-bold text-slate-800 mb-2">📊 Step 4: System Generation & Delivery of GST Invoice</h5>
+                      <p>Accountability and fiscal transparency are foundational to our services. Within 24 hours of successful verification, our accounting systems compile a comprehensive, legally compliant Corporate GST Invoice detailing the exact service breakdown and tax identifiers. This asset is dispatched straight to the student's billing tab for corporate tax deduction filing purposes.</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Pre-Exam Result & Pre-Board Professional Certificate</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>Results are shared within 24–48 hours via email.</li>
-                        <li>A Pre-Board Professional Certificate is issued with “Under Training” mentioned.</li>
-                      </ul>
+                      <h5 className="font-bold text-slate-800 mb-2">🗒️ Step 5: Dissemination of Comprehensive PDF Study Material <span className="text-rose-600">(Strict One-Time Release)</span></h5>
+                      <p>Upon successful verification, the complete independent text registry library is unlocked. Students receive high-fidelity, comprehensive PDF Study Materials and Text Workbooks tailored strictly to their curriculum.</p>
+                      <p className="mt-2 text-rose-600 font-semibold">⚠️ Operational Security Notice: In accordance with our digital asset protection protocols, all reading materials are shared on a strict one-time basis only. Students must securely download and save these assets immediately upon distribution, as link refreshes or secondary file dispatches will not be granted.</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Reward Eligibility</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>Customers scoring above 80% become eligible for a gift.</li>
-                        <li>One gift can be selected from four available options, which will be delivered accordingly.</li>
-                      </ul>
+                      <h5 className="font-bold text-slate-800 mb-2">🌟 Step 6: Issuance of Formal Training Enrollment Certificate</h5>
+                      <p>Before course modules begin, our records registry generates a formal, verifiable PMI Services Enrollment Certificate. This initial credential serves as an active commercial proof of status, reflecting that the individual is currently under training within an active, non-affiliated skill development boot camp.</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Self-Paced Training</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>Access to recorded video lectures is shared within 15 days on payment.</li>
-                        <li>Training duration is 90–120 days.</li>
-                      </ul>
+                      <h5 className="font-bold text-slate-800 mb-2">📈 Step 7: Access Provisioning for Video Lecture Sessions <span className="text-rose-600">(Strict One-Time Release)</span></h5>
+                      <p>Learners gain access to their master collection of high-definition, pre-recorded visual walkthroughs and technical screen-shares. These professional Video Lectures contain the entirety of the execution-level core methodologies.</p>
+                      <p className="mt-2 text-rose-600 font-semibold">⚠️ Operational Security Notice: In line with platform distribution rules, access keys to the video lecture sets are shared on a strict one-time basis only. Re-sharing, profile splitting, or secondary video deliveries are completely restricted to safeguard content parameters.</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Final Exam & Certificate</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>A Final Exam is conducted between 90-120 days.</li>
-                        <li>Upon successful completion of all requirements, the Final Certificate is issued.</li>
-                        <li>The certificate will clearly state the status as “Certified.”</li>
-                      </ul>
+                      <h5 className="font-bold text-slate-800 mb-2">🗓️ Step 8: Distribution of Final Examination Login Credentials</h5>
+                      <p>Once the designated curriculum timeline has elapsed, the student workspace triggers the final evaluation phase. The platform outputs unique, encrypted Final Exam Login Credentials directly to the student portal, giving them an isolated access window to complete their timed, multiple-choice evaluation independently.</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Continuous Support</h5>
-                      <p>Throughout the entire journey, the PMI Services team remains in contact for guidance and support.</p>
+                      <h5 className="font-bold text-slate-800 mb-2">✅ Step 9: Final Exam Result Processing & Delivery with Provisional Certificate (PC)</h5>
+                      <p>Upon completing the examination, our grading engines parse the submission data against metric matrices. The comprehensive Final Exam Result Sheet is computed and displayed instantly inside the dashboard. Graduates are immediately issued their verified Provisional Certificate (PC), closing out the service lifecycle and enabling immediate skill deployment in the corporate sector.</p>
                     </div>
                   </div>
                 </div>
@@ -149,61 +124,39 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                 <div className="bg-slate-50/50 rounded-[2rem] p-8 border border-slate-100/80">
                   <div className="space-y-6 text-slate-600 text-[15px] leading-relaxed">
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Course Duration and Delivery</h5>
+                      <h5 className="font-bold text-slate-800 mb-2">1. Scope of Independent Vocational Services</h5>
+                      <p>By completing a commercial transaction and registering for any training program on PMI Services (https://pmiservices.org), you explicitly acknowledge and agree that all services rendered are independent, skill-based vocational training programs. PMI Services functions strictly as an asynchronous educational infrastructure platform. Our programs are non-degree, non-diploma courses and explicitly do not require or maintain any affiliation, accreditation, or licensing from any university, government institute, or private educational board.</p>
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-slate-800 mb-2">2. Asynchronous Delivery Model & Anti-Interactive Clauses</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>The complete course will be delivered within 90 to 120 days from the date of enrollment.</li>
-                        <li>After enrollment, learners will receive an Invoice, Study Materials and video lectures within 10 working days of making the payment.</li>
-                        <li>A Pre-Board Exam will be scheduled 24 to 48 hours after payment, accessible via the official PMI Services exam portal. An Initial PC Softcopy (indicating “Under Training” and course details), will be provided after going through the pre-board exam within 48 to 72 hours.</li>
-                        <li>The final online exam must be attended between 90 to 120 days after enrollment.</li>
-                        <li>Upon successful exam completion, the Final PC Softcopy will be emailed to the candidate, indicating “Successfully Certified”.</li>
+                        <li><strong>Exclusivity of Medium:</strong> Training is delivered solely and exclusively via pre-recorded, asynchronous video lecture modules and downloadable PDF text study workbooks.</li>
+                        <li><strong>Prohibition of Live Training:</strong> PMI Services never offers, promises, or provides any person-to-person instruction, live classroom training, group webinars, real-time mentorship, or interactive tutor sessions.</li>
+                        <li><strong>Self-Directed Operational Responsibility:</strong> The Student bears absolute responsibility for navigating the course materials independently. No claims for refunds based on the lack of live human interaction will be entertained under any circumstances.</li>
                       </ul>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Training Format</h5>
+                      <h5 className="font-bold text-slate-800 mb-2">3. Strict 9-Step Service Delivery Protocol & Binding Benchmarks</h5>
+                      <p className="mb-2">Fulfillment of the purchase contract is systematically tracked and verified by our backend architecture across nine sequential milestones. By enrolling, the Student agrees to comply with the operational conditions of each step:</p>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>No live training sessions will be provided.</li>
-                        <li>Study material and training videos will be shared once only via email after the enrollment.</li>
-                        <li>Training videos and study materials are non-transferable and intended solely for enrolled candidates.</li>
-                        <li>Upon successful completion of the program, the certificate will be released with an abbreviation format. For an example if the course you have enrolled in "Resilience Coach Training", then "RCT" will appear on your certificate, similarly if the course name is Decision Making Mastery Training, on the certificate it will show "DMMT"</li>
+                        <li><strong>Step 1 – Admission Confirmation After Payment:</strong> Triggered instantly upon payment gateway clearance. This marks the commencement of the digital contractual relationship.</li>
+                        <li><strong>Step 2 – Mandatory Document KYC:</strong> The Student must securely upload valid government-issued photo identification. Failure to provide legitimate documentation within the course timeframe will result in account suspension without a refund.</li>
+                        <li><strong>Step 3 – Mandatory Video KYC Authentication:</strong> A biometric video check must be recorded by the student to verify identity, eliminate fraud, and prevent proxy test-taking. Accounts failing the security profile checks are immediately locked.</li>
+                        <li><strong>Step 4 – GST Invoice Delivery:</strong> A legally compliant Corporate GST Invoice is compiled and posted to the student's dashboard within 24 hours of successful validation.</li>
+                        <li><strong>Step 5 – PDF Study Material Dissemination (Strict One-Time Release):</strong> Files are shared on a strict one-time basis only. The Student bears the full legal and technical responsibility to securely save, download, and backup these digital assets immediately upon distribution.</li>
+                        <li><strong>Step 6 – Enrollment Certificate Issuance:</strong> A digital record reflecting active training within our independent boot camp is instantly generated and delivered.</li>
+                        <li><strong>Step 7 – Video Lecture Access Provisioning (Strict One-Time Release):</strong> Access keys to the video streams are delivered on a strict one-time basis only. Account sharing, profile splitting, or data scraping are prohibited and will trigger automated account bans without a refund.</li>
+                        <li><strong>Step 8 – Final Examination Login Credentials:</strong> Upon expiration of the designated course duration, encrypted examination keys are assigned to the portal.</li>
+                        <li><strong>Step 9 – Final Exam Grading & Provisional Certificate (PC) Delivery:</strong> Upon submission, grading engines compute results instantly, and a provisional credential is issued to close the service loop.</li>
                       </ul>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Exam Policy</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>Multiple exam attempts are not permitted, for pre-board as well as final exam.</li>
-                        <li>The Final PC Softcopy will be issued within 15 days after the final exam attempt.</li>
-                        <li>No hard copy certificates will be delivered; all documents will be sent in digital format only.</li>
-                      </ul>
+                      <h5 className="font-bold text-slate-800 mb-2">4. Certificate Format</h5>
+                      <p>Upon successful completion of the program, the certificate will be released with an abbreviation format. For example, if the course enrolled is "Resilience Coach Training", then "RCT" will appear on the certificate; similarly, "Decision Making Mastery Training" will show "DMMT".</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Refund Policy</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>No refund will be applicable after attempting any exam (Pre-Board or Final).</li>
-                        <li>A 90% refund is applicable before attempting any exam.</li>
-                        <li>There is no 100% refund policy.</li>
-                        <li>A 10% deduction will apply to all refunds to cover the cost of digital study materials and content access.</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Pre-Examination Reward Policy</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>Candidates who secure 80% or above in the designated pre-examination will be eligible to receive a complimentary gift.</li>
-                        <li>Eligible candidates will be provided with 5+ options for gift items worth upto 50k-100k. The final gift selection will be subject to availability and company discretion.</li>
-                        <li>By qualifying for the reward, candidates consent to the use and display of their photograph on the company’s official website and promotional platforms.</li>
-                        <li>Gift items will be dispatched within 45 to 60 days from the date of result declaration.</li>
-                        <li>All gifts will be accompanied by the manufacturer’s warranty, where applicable.</li>
-                        <li>Courier tracking details will be shared via registered email once the item has been dispatched.</li>
-                        <li>For delivery verification, a one-time password (OTP) required by the courier partner will be shared with the recipient by the company.</li>
-                        <li>The company reserves the right to modify, substitute, or discontinue the reward offer at any time without prior notice, in accordance with applicable laws and operational requirements.</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h5 className="font-bold text-slate-800 mb-2">General Terms</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>All timelines mentioned are approximate and subject to variation depending on course type and customer engagement.</li>
-                        <li>Study materials and videos are shared once and cannot be reissued.</li>
-                        <li>By enrolling, candidates agree to comply with the above terms and conditions.</li>
-                      </ul>
+                      <h5 className="font-bold text-slate-800 mb-2">5. Acceptance of Terms</h5>
+                      <p>By scrolling past this screen, clicking "I Agree," or processing a training fee payment on our network domains, you explicitly declare that you have read, understood, and agreed to be legally bound by this Service Delivery Framework and No-Refund Policy.</p>
                     </div>
                   </div>
                 </div>
@@ -215,65 +168,54 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                 <div className="bg-slate-50/50 rounded-[2rem] p-8 border border-slate-100/80">
                   <div className="space-y-6 text-slate-600 text-[15px] leading-relaxed">
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Information We Collect</h5>
-                      <p className="mb-2">We collect the following types of information to ensure smooth operation of our services:</p>
+                      <h5 className="font-bold text-slate-800 mb-2">1. Introduction & Scope</h5>
+                      <p>This Privacy Policy governs the data collection, storage, processing, and security practices of PMI Services (operating through its asynchronous educational infrastructure platform at https://pmiservices.org). By registering an account, making a purchase, or completing the security verification steps, you explicitly consent to the collection, processing, and retention practices outlined in this policy.</p>
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-slate-800 mb-2">2. Information We Collect</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li><strong>Personal Information:</strong> Your name, email address, contact number, and country of residence collected during registration or inquiries.</li>
-                        <li><strong>Payment Information:</strong> Transaction details (amount, date, and payment method). We do not store complete payment card or crypto wallet details.</li>
-                        <li><strong>Course and Usage Data:</strong> Information about the courses you enroll in, your progress, assessments, and interactions with our online learning platform.</li>
-                        <li><strong>Technical Information:</strong> Device type, IP address, browser version, and cookies to improve website performance and user experience.</li>
+                        <li><strong>Personal Identification Data:</strong> Full legal name, billing address, phone number, and corporate email address collected during checkout or sign-up.</li>
+                        <li><strong>Documentary Identity (Document KYC):</strong> Images or digital files of valid government-issued photo identification cards uploaded securely to our portal.</li>
+                        <li><strong>Biometric Identity (Video KYC):</strong> Self-directed, brief video records processed through an integrated web interface to execute facial matching against submitted documentation and to eliminate proxy testing.</li>
+                        <li><strong>Evaluation Records:</strong> Answers, responses, submission timestamps, and performance metrics parsed by our grading matrices during automated final examinations.</li>
+                        <li><strong>System & Backend Server Logs:</strong> Unique workspace access keys, IP address mapping, browser data, and precise file-download timestamps related to the release of text libraries and video lecture elements.</li>
                       </ul>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">How We Use Your Information</h5>
-                      <p className="mb-2">We use your information to:</p>
+                      <h5 className="font-bold text-slate-800 mb-2">3. How We Use Your Data</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>Process your course enrollment and payments.</li>
-                        <li>Provide access to study materials, exams, and course completion certificates.</li>
-                        <li>Communicate important updates, reminders, and support-related information.</li>
-                        <li>Improve course quality, website functionality, and user experience.</li>
-                        <li>Maintain compliance with our internal policies and applicable laws.</li>
+                        <li><strong>Identity Verification & Anti-Fraud:</strong> Cross-referencing your biometric Video KYC data with your submitted physical document profile to establish an unalterable audit trail, eliminating proxy test-taking and financial transaction theft.</li>
+                        <li><strong>Service Fulfillment:</strong> Provisioning individual profiles with unique access keys to streaming lecture workspaces, digital text repositories, and encrypted final examination modules.</li>
+                        <li><strong>Credential Issuance:</strong> Generating accurate legal profiles for formal, verifiable documents, including initial Enrollment Certificates and final Provisional Certificates (PC).</li>
+                        <li><strong>Compliance & Legal Accountability:</strong> Compiling and posting legally compliant Corporate GST Invoices straight to your workspace within 24 hours of successful validation.</li>
                       </ul>
-                      <p className="mt-2">We do not sell, trade, or rent your personal information to any third party.</p>
+                      <p className="mt-2">We do not sell, rent, trade, or share your personal, documentary, or biometric data with external third-party marketing networks or unrelated data brokers.</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Data Storage and Security & Payment & Financial Data</h5>
+                      <h5 className="font-bold text-slate-800 mb-2">4. Data Protection, Sharing & Disclosure</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>All personal data is stored securely in encrypted databases.</li>
-                        <li>Only authorized PMI Services personnel have access to user data.</li>
-                        <li>We regularly update our systems and employ security measures such as SSL encryption to protect against unauthorized access, alteration, or disclosure.</li>
+                        <li><strong>Payment Processing:</strong> Financial details are managed securely via encrypted, external payment gateways during checkout to clear transactions safely.</li>
+                        <li><strong>Dispute and Chargeback Defense:</strong> If a user files a transaction dispute, credit card chargeback, or payment reversal claim, PMI Services will submit backend server logs (such as download metrics and KYC verification markers) to the involved financial institutions to defend against the claim.</li>
+                        <li><strong>Legal Enforcement:</strong> Data may be disclosed if required by an official court order, applicable government statutory body, or prevailing regulatory legal framework.</li>
                       </ul>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Use of Cookies</h5>
-                      <p className="mb-2">Our website uses cookies to:</p>
+                      <h5 className="font-bold text-slate-800 mb-2">5. Security & Technical Safeguards</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>Enhance your browsing experience.</li>
-                        <li>Save login preferences.</li>
-                        <li>Analyze site traffic and improve user experience.</li>
-                      </ul>
-                      <p className="mt-2">You can choose to disable cookies from your browser settings; however, some website features may not function properly as a result.</p>
-                    </div>
-                    <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Data Retention & Third-Party Links</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>We retain your personal information for as long as necessary to fulfill course delivery and legal obligations. Once no longer needed, your data will be securely deleted or anonymized.</li>
-                        <li>Our website may contain links to third-party websites (e.g., payment gateways or educational partners). PMI Services is not responsible for the privacy practices or content of these external sites.</li>
+                        <li><strong>Data Encryption:</strong> Document uploads, video files, and financial invoice generation are processed and stored over secure, encrypted network connections.</li>
+                        <li><strong>Workspace Automated Bans:</strong> Automated behavioral system parameters track multi-location concurrent logins. Profiles attempting unauthorized concurrent access, scraping attempts via scripts, or distributing video access streams are banned to ensure ecosystem security.</li>
                       </ul>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Your Rights</h5>
-                      <p className="mb-2">You have the right to:</p>
+                      <h5 className="font-bold text-slate-800 mb-2">6. Data Retention Policies</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>Access the information we hold about you.</li>
-                        <li>Request correction or deletion of inaccurate data.</li>
-                        <li>Withdraw consent for marketing communications at any time.</li>
+                        <li><strong>Operational Files:</strong> Personal profile structures, exam transcripts, and credential verification links are kept for as long as your workspace account remains active or to fulfill tax, corporate accounting, or institutional tracking standards.</li>
+                        <li><strong>KYC Security Profiles:</strong> Biometric checks and government identification logs are preserved securely to maintain an unalterable transaction audit trail, serving as definitive evidence of contractual compliance.</li>
                       </ul>
-                      <p className="mt-2">To exercise these rights, please contact our support team at support@pmiservices.org.</p>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Policy Updates</h5>
-                      <p>PMI Services (OPC) Pvt Ltd and PayG, reserves the right to update or modify this Privacy Policy at any time without prior notice. The revised version will be posted on our website with an updated effective date.</p>
+                      <h5 className="font-bold text-slate-800 mb-2">7. Acceptance & Acknowledgement</h5>
+                      <p>Interacting with the platform, completing registrations, or inputting identity vectors implies explicit and dynamic acknowledgement of this Privacy Policy. PMI Services reserves the right to update or modify this Privacy Policy at any time without prior notice. The revised version will be posted on our website with an updated effective date.</p>
                     </div>
                   </div>
                 </div>
@@ -285,49 +227,31 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                 <div className="bg-slate-50/50 rounded-[2rem] p-8 border border-slate-100/80">
                   <div className="space-y-6 text-slate-600 text-[15px] leading-relaxed">
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">No Refund After Exam Attempt</h5>
+                      <h5 className="font-bold text-slate-800 mb-2">1. Executive Summary & Legal Framework</h5>
+                      <p>By completing a commercial financial transaction or registering for any independent skill-based training program on the PMI Services network domains, the user explicitly acknowledges, understands, and binds themselves to this comprehensive, non-negotiable Service Fulfillment and No-Refund Policy. PMI Services functions strictly and exclusively as an independent, asynchronous educational infrastructure platform.</p>
+                      <p className="mt-2 text-amber-700 font-semibold">Independent Status Notice: PMI Services does not maintain, require, or claim any affiliation, accreditation, licensing, or oversight from any university, government institute, statutory educational body, or private educational board. Consequently, normal academic withdrawal policies, student tuition protection schemes, or traditional institutional refund metrics are wholly inapplicable.</p>
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-slate-800 mb-2">2. Asynchronous Delivery Model & Anti-Interactive Clauses</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>Once a candidate has attempted any exam — whether it is the Pre-Board Exam or the Final Exam — no refund will be applicable under any circumstances.</li>
-                        <li>This policy ensures the integrity of our course access and examination system, as study materials and evaluations are already utilized at that stage.</li>
+                        <li><strong>Exclusivity of Medium:</strong> All vocational training curricula are delivered solely and exclusively via pre-recorded, asynchronous video lecture modules and downloadable PDF text study workbooks.</li>
+                        <li><strong>Prohibition of Live Training:</strong> The platform never offers, promises, schedules, or provides any form of person-to-person instruction, live virtual classroom training, synchronous group webinars, real-time mentorship, or interactive tutor-led sessions.</li>
+                        <li><strong>Binding Clause:</strong> No claims, complaints, demands, or legal petitions for refunds based on a purported lack of live human interaction or dissatisfaction with the self-guided nature of the platform will be entertained under any circumstances.</li>
                       </ul>
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-800 mb-2">90% Refund Before Exam Attempt</h5>
+                      <h5 className="font-bold text-slate-800 mb-2">3. Exhaustive Legal Provisos & Operational Enforcement</h5>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>If a candidate wishes to cancel their enrollment before attempting the pre-exam, they are eligible for a 90% refund of the total course fee.</li>
-                        <li>Refund will be only be provided if the customer raised the request within 24 hours of making the payment and they must not attend the exam otherwise no refund will be initiated to them.</li>
-                        <li>The refund request must be raised in writing via email to the official PMI Services support team.</li>
-                        <li>Refund processing time is 5-7 working days once the refund request is approved it may take an additional 7 working days to get credited into the customer's bank account from which payment was made.</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h5 className="font-bold text-slate-800 mb-2">No 100% Refund Policy & 10% Deduction</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>Please note that PMI Services does not offer a 100% refund under any condition. This is due to administrative, processing, and content access costs incurred upon enrollment.</li>
-                        <li>All approved refunds will include a 10% deduction to cover costs associated with digital content delivery, study materials, and platform usage. This deduction applies uniformly to all refund cases.</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Refund Request Procedure</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>To request a refund, the candidate must email support@pmiservices.org with their full name, registered email ID, course name, payment receipt, and reason for cancellation.</li>
-                        <li>Requests without complete details may face delays in processing.</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h5 className="font-bold text-slate-800 mb-2">Special Note - Refunds are not applicable in the following cases:</h5>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li><strong>Partial Course Completion:</strong> If a candidate has completed only a portion of the course, no refund will be issued for the remaining content.</li>
-                        <li><strong>Delayed Course Progress:</strong> Refunds will not be provided due to delays in completing the course at the candidate’s own pace.</li>
-                        <li><strong>Accessed Content:</strong> Once study materials, training videos, or pre-board assessments have been accessed, refunds will not be applicable.</li>
-                        <li><strong>Dissatisfaction with Course Content:</strong> Refunds cannot be claimed solely based on personal preferences, expectations, or dissatisfaction with the course material.</li>
+                        <li><strong>Technical Incompatibility & Device Disclaimers:</strong> No refunds will be granted based on technical limitations, outdated user browsers, local firewall blocks, network latency, ISP restrictions, or general device incompatibility.</li>
+                        <li><strong>Unilateral Account Revocation for Security Violations:</strong> PMI Services reserves the right to terminate any user profile instantly, without warning, and without the obligation of financial reimbursement, if backend system logs detect concurrent multi-location IP logins, data-scraping scripts, or fraudulent identity documentation during KYC protocols.</li>
+                        <li><strong>Program Modification and Discontinuance Indemnity:</strong> PMI Services reserves the right to modify, adjust, update, or re-sequence any portion of its instructional modules, PDF workbooks, grading metrics, or exam platforms at any time. This does not entitle the Client to a retrofitted refund, platform credit, or course exchange.</li>
                       </ul>
                     </div>
 
                     <div className="pt-6 border-t border-slate-200/60 space-y-4">
-                      <h5 className="font-bold text-slate-800 text-lg">Defatigability of Services & Definitive "No-Refund" Policy</h5>
+                      <h5 className="font-bold text-slate-800 text-lg">4. Defatigability of Services & Definitive "No-Refund" Policy</h5>
                       <p className="leading-relaxed">
-                        PMI Services distributes high-value, proprietary digital intellectual property. Due to the digital nature of these assets—which can be instantly viewed, saved, or downloaded upon release—all transactions executed on https://pmiservices.org are strictly FINAL, NON-CANCELLABLE, AND NON-REFUNDABLE.
+                        PMI Services distributes high-value, proprietary digital intellectual property. Due to the digital nature of these assets—which can be instantly viewed, saved, cached, screenshotted, or downloaded immediately upon release—all transactions executed on https://pmiservices.org are strictly FINAL, NON-CANCELLABLE, AND NON-REFUNDABLE.
                       </p>
                       
                       <div className="overflow-x-auto rounded-2xl border border-rose-200/80 shadow-sm mt-3 bg-white">
@@ -364,6 +288,11 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                         </table>
                       </div>
                     </div>
+
+                    <div>
+                      <h5 className="font-bold text-slate-800 mb-2">5. Acceptance of Terms & Dynamic Acknowledgement</h5>
+                      <p>By scrolling past presentation screens, checking an "I Agree" checkbox, interacting with any workspace element, or processing a training fee payment on our network domains, you explicitly declare that you have read, understood, and agreed to be legally bound by this Service Delivery Framework and No-Refund Policy.</p>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -383,7 +312,7 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                     </div>
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">Independent Organization</h5>
-                      <p>PMI Services (OPC) PVT. LTD. is an independent training and service provider. We are not affiliated, associated, authorized, endorsed by, or in any way officially connected with any other institute, organization, or governing body. All rights related to our services, content, and training materials are solely reserved by PMI Services.</p>
+                      <p>PMI Services is an independent training and service provider. We are not affiliated, associated, authorized, endorsed by, or in any way officially connected with any other institute, organization, or governing body. All rights related to our services, content, and training materials are solely reserved by PMI Services.</p>
                     </div>
                     <div>
                       <h5 className="font-bold text-slate-800 mb-2">No Guarantee of Employment or Monetary Benefit</h5>
