@@ -323,6 +323,47 @@ const DisclaimerOverlay = ({ user, profile, onAccepted }) => {
                         <li><strong>Dissatisfaction with Course Content:</strong> Refunds cannot be claimed solely based on personal preferences, expectations, or dissatisfaction with the course material.</li>
                       </ul>
                     </div>
+
+                    <div className="pt-6 border-t border-slate-200/60 space-y-4">
+                      <h5 className="font-bold text-slate-800 text-lg">Defatigability of Services & Definitive "No-Refund" Policy</h5>
+                      <p className="leading-relaxed">
+                        PMI Services distributes high-value, proprietary digital intellectual property. Due to the digital nature of these assets—which can be instantly viewed, saved, or downloaded upon release—all transactions executed on https://pmiservices.org are strictly FINAL, NON-CANCELLABLE, AND NON-REFUNDABLE.
+                      </p>
+                      
+                      <div className="overflow-x-auto rounded-2xl border border-rose-200/80 shadow-sm mt-3 bg-white">
+                        <table className="w-full text-left border-collapse text-xs md:text-sm">
+                          <thead>
+                            <tr className="bg-rose-50/90 border-b border-rose-200/70 text-[#991B1B] uppercase font-bold tracking-wider text-[11px] md:text-xs">
+                              <th className="p-3.5 md:p-4 border-r border-rose-100/60 w-1/4">Policy Provision</th>
+                              <th className="p-3.5 md:p-4 border-r border-rose-100/60 w-5/12">Description & Execution Threshold</th>
+                              <th className="p-3.5 md:p-4">Legal Impact on Client</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-rose-100/70 text-slate-700">
+                            <tr>
+                              <td className="p-3.5 md:p-4 font-bold text-slate-900 border-r border-rose-100/50 align-top">Instant Fulfillment Waiver</td>
+                              <td className="p-3.5 md:p-4 border-r border-rose-100/50 align-top">Triggered immediately upon Step 1 (Payment Clearance) and Step 5 (PDF Study Material Dissemination).</td>
+                              <td className="p-3.5 md:p-4 align-top">The Client <strong className="text-slate-900 font-bold">explicitly waives any right to an operational "cooling-off period"</strong> or transaction cancellation once assets are deployed.</td>
+                            </tr>
+                            <tr>
+                              <td className="p-3.5 md:p-4 font-bold text-slate-900 border-r border-rose-100/50 align-top">One-Time Sharing Indemnification</td>
+                              <td className="p-3.5 md:p-4 border-r border-rose-100/50 align-top">Established upon execution of the "Strict One-Time Release" protocols in Step 5 and Step 7.</td>
+                              <td className="p-3.5 md:p-4 align-top">The platform is <strong className="text-slate-900 font-bold">completely indemnified</strong> against student complaints regarding data loss, user error, device incompatibility, or platform lockouts resulting from a breach of user rules.</td>
+                            </tr>
+                            <tr>
+                              <td className="p-3.5 md:p-4 font-bold text-slate-900 border-r border-rose-100/50 align-top">KYC Refusal Forfeiture</td>
+                              <td className="p-3.5 md:p-4 border-r border-rose-100/50 align-top">Triggered if a user refuses or fails Step 2 (Document KYC) or Step 3 (Video KYC).</td>
+                              <td className="p-3.5 md:p-4 align-top">The user's account will be permanently banned for a security breach. <strong className="text-slate-900 font-bold">All paid registration fees are entirely forfeited</strong> to cover administrative processing costs.</td>
+                            </tr>
+                            <tr>
+                              <td className="p-3.5 md:p-4 font-bold text-slate-900 border-r border-rose-100/50 align-top">Dispute & Chargeback Mitigation</td>
+                              <td className="p-3.5 md:p-4 border-r border-rose-100/50 align-top">Triggered when a client files a dispute, credit card chargeback, or payment reversal claim.</td>
+                              <td className="p-3.5 md:p-4 align-top">Treated legally as a <strong className="text-slate-900 font-bold">breach of contract</strong>. The platform will submit this policy and server logs to banks to <strong className="text-slate-900 font-bold">aggressively deny the claim</strong>.</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>
