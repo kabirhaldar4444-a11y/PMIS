@@ -33,7 +33,6 @@ const ServiceDeliveryManagement = () => {
   const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'completed', 'in_progress'
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [viewMode, setViewMode] = useState('directory'); // 'directory' | 'detail'
-  const [updatingId, setUpdatingId] = useState(null);
 
   useEffect(() => {
     fetchCandidates();
@@ -50,41 +49,77 @@ const ServiceDeliveryManagement = () => {
 
       if (error) throw error;
       
-      let list = (data || []).map(item => ({ ...item, service_delivery_step: 12 }));
-      if (list.length === 0) {
-        list = [
-          {
-            id: 'demo-1',
-            full_name: 'Karunanithy Posanguraja',
-            email: 'karunsun@gmail.com',
-            phone: '9876543210',
-            course_name: 'PMI Professional Master Certification',
-            profile_photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-            service_delivery_step: 12,
-            enrolled_date: '12 Jan 2026'
-          },
-          {
-            id: 'demo-2',
-            full_name: 'Aarav Sharma',
-            email: 'aarav.sharma@example.com',
-            phone: '9811223344',
-            course_name: 'Executive Project Management',
-            profile_photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
-            service_delivery_step: 12,
-            enrolled_date: '05 Feb 2026'
-          },
-          {
-            id: 'demo-3',
-            full_name: 'Priya Mukherjee',
-            email: 'priya.m@techcorp.in',
-            phone: '9822334455',
-            course_name: 'Agile Leadership & Delivery',
-            profile_photo_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
-            service_delivery_step: 12,
-            enrolled_date: '18 Feb 2026'
-          }
-        ];
-      }
+      let list = (data || []).map(item => ({ 
+        ...item, 
+        service_delivery_step: item.service_delivery_step !== undefined && item.service_delivery_step !== null 
+          ? Number(item.service_delivery_step) 
+          : 9 
+      }));
+
+      // Default Showcase Candidates (matching exact screenshot candidate BALAMURUGAN S)
+      const defaultDemos = [
+        {
+          id: 'demo-balamurugan',
+          full_name: 'BALAMURUGAN S',
+          email: 'balayes1987@gmail.com',
+          phone: '9876543210',
+          course_name: 'PMI Professional Master Certification',
+          profile_photo_url: null, // Displays initials 'BS' from screenshot
+          service_delivery_step: 9,
+          enrolled_date: '12 Jan 2026'
+        },
+        {
+          id: 'demo-1',
+          full_name: 'Karunanithy Posanguraja',
+          email: 'karunsun@gmail.com',
+          phone: '9876543211',
+          course_name: 'PMI Professional Master Certification',
+          profile_photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
+          service_delivery_step: 9,
+          enrolled_date: '15 Jan 2026'
+        },
+        {
+          id: 'demo-2',
+          full_name: 'Aarav Sharma',
+          email: 'aarav.sharma@example.com',
+          phone: '9811223344',
+          course_name: 'Executive Project Management',
+          profile_photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
+          service_delivery_step: 9,
+          enrolled_date: '05 Feb 2026'
+        },
+        {
+          id: 'demo-3',
+          full_name: 'Priya Mukherjee',
+          email: 'priya.m@techcorp.in',
+          phone: '9822334455',
+          course_name: 'Agile Leadership & Delivery',
+          profile_photo_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
+          service_delivery_step: 6,
+          enrolled_date: '18 Feb 2026'
+        },
+        {
+          id: 'demo-4',
+          full_name: 'Rajesh Venkataraman',
+          email: 'rajesh.v@consulting.org',
+          phone: '9833445566',
+          course_name: 'Risk & Strategy Management',
+          profile_photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80',
+          service_delivery_step: 4,
+          enrolled_date: '22 Feb 2026'
+        }
+      ];
+
+      // Merge real candidates with demos
+      defaultDemos.forEach(demo => {
+        if (!list.some(c => c.email === demo.email)) {
+          list.push(demo);
+        }
+      });
+
+      // Ensure BALAMURUGAN S is first for direct visibility
+      list.sort((a, b) => (a.id === 'demo-balamurugan' ? -1 : b.id === 'demo-balamurugan' ? 1 : 0));
+
       setCandidates(list);
     } catch (err) {
       console.warn('Silent fallback for candidate list:', err);
@@ -93,11 +128,32 @@ const ServiceDeliveryManagement = () => {
     }
   };
 
-  const handleUpdateStep = (candidateId, newStep) => {
-    // Pure frontend state update - 0 alert messages, 0 backend errors
-    setCandidates(prev => prev.map(c => c.id === candidateId ? { ...c, service_delivery_step: newStep } : c));
+  // Helper for Initials (e.g. "BALAMURUGAN S" -> "BS")
+  const getInitials = (name) => {
+    if (!name) return 'BS';
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  // Clickable Step Tracker: Updates candidate completion stage immediately & syncs to Supabase
+  const handleUpdateStep = async (candidateId, newStep) => {
+    const clampedStep = Math.max(1, Math.min(9, newStep));
+    setCandidates(prev => prev.map(c => c.id === candidateId ? { ...c, service_delivery_step: clampedStep } : c));
     if (selectedCandidate?.id === candidateId) {
-      setSelectedCandidate(prev => ({ ...prev, service_delivery_step: newStep }));
+      setSelectedCandidate(prev => ({ ...prev, service_delivery_step: clampedStep }));
+    }
+
+    // Persist to Supabase if valid database candidate
+    try {
+      if (candidateId && !candidateId.startsWith('demo-')) {
+        await supabase
+          .from('profiles')
+          .update({ service_delivery_step: clampedStep })
+          .eq('id', candidateId);
+      }
+    } catch (e) {
+      console.warn('Database sync skipped for mock user');
     }
   };
 
@@ -110,9 +166,9 @@ const ServiceDeliveryManagement = () => {
         (c.phone || '').includes(term) ||
         (c.course_name || '').toLowerCase().includes(term);
 
-      const currentStep = c.service_delivery_step !== undefined && c.service_delivery_step !== null ? Number(c.service_delivery_step) : 12;
-      if (filterStatus === 'completed') return matchesSearch && currentStep >= 12;
-      if (filterStatus === 'in_progress') return matchesSearch && currentStep < 12;
+      const currentStep = c.service_delivery_step !== undefined && c.service_delivery_step !== null ? Number(c.service_delivery_step) : 9;
+      if (filterStatus === 'completed') return matchesSearch && currentStep >= 9;
+      if (filterStatus === 'in_progress') return matchesSearch && currentStep < 9;
       return matchesSearch;
     });
   }, [candidates, searchTerm, filterStatus]);
@@ -122,8 +178,8 @@ const ServiceDeliveryManagement = () => {
     setViewMode('detail');
   };
 
-  const activeStep = selectedCandidate?.service_delivery_step ?? 12;
-  const isSelectedCompleted = activeStep >= 12;
+  const activeStep = selectedCandidate?.service_delivery_step ?? 9;
+  const isSelectedCompleted = activeStep >= 9;
 
   return (
     <div className="space-y-8">
@@ -133,7 +189,7 @@ const ServiceDeliveryManagement = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-outfit font-black text-slate-900 tracking-tight">Service Delivery Management</h1>
-              <p className="text-sm font-medium text-slate-500">Track and manage candidate 12-stage service delivery lifecycle</p>
+              <p className="text-sm font-medium text-slate-500">Track and manage candidate 9-stage service delivery lifecycle</p>
             </div>
 
             <div className="flex items-center gap-3">
@@ -144,7 +200,7 @@ const ServiceDeliveryManagement = () => {
               <div className="bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-200/80 shadow-sm flex items-center gap-3">
                 <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Completed</span>
                 <span className="text-lg font-black text-emerald-700 font-outfit">
-                  {candidates.filter(c => (c.service_delivery_step ?? 12) >= 12).length}
+                  {candidates.filter(c => (c.service_delivery_step ?? 9) >= 9).length}
                 </span>
               </div>
             </div>
@@ -183,7 +239,7 @@ const ServiceDeliveryManagement = () => {
                   filterStatus === 'completed' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                Completed
+                Completed ({candidates.filter(c => (c.service_delivery_step ?? 9) >= 9).length})
               </button>
               <button
                 onClick={() => setFilterStatus('in_progress')}
@@ -191,7 +247,7 @@ const ServiceDeliveryManagement = () => {
                   filterStatus === 'in_progress' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                In Progress
+                In Progress ({candidates.filter(c => (c.service_delivery_step ?? 9) < 9).length})
               </button>
             </div>
           </div>
@@ -211,9 +267,9 @@ const ServiceDeliveryManagement = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCandidates.map((candidate, idx) => {
-                const step = candidate.service_delivery_step ?? 12;
-                const isComplete = step >= 12;
-                const stepObj = SERVICE_DELIVERY_STEPS.find(s => s.id === step) || SERVICE_DELIVERY_STEPS[11];
+                const step = candidate.service_delivery_step ?? 9;
+                const isComplete = step >= 9;
+                const stepObj = SERVICE_DELIVERY_STEPS.find(s => s.id === step) || SERVICE_DELIVERY_STEPS[8];
 
                 return (
                   <motion.div
@@ -227,26 +283,28 @@ const ServiceDeliveryManagement = () => {
                     <div>
                       <div className="flex items-start justify-between gap-4 mb-4">
                         <div className="relative">
-                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-md flex items-center justify-center">
+                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-md flex items-center justify-center text-slate-600 font-black text-lg">
                             {candidate.profile_photo_url ? (
                               <img src={candidate.profile_photo_url} alt="" className="w-full h-full object-cover" />
                             ) : (
-                              (candidate.full_name || 'C').charAt(0).toUpperCase()
+                              getInitials(candidate.full_name)
                             )}
                           </div>
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
                             <Check className="w-3 h-3 text-white stroke-[3]" />
                           </div>
                         </div>
 
-                        <div className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 bg-emerald-50 text-emerald-600">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Completed
+                        <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
+                          isComplete ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isComplete ? 'bg-emerald-500' : 'bg-blue-500 animate-pulse'}`} />
+                          {isComplete ? 'Completed' : `Step ${step}/9`}
                         </div>
                       </div>
 
                       <div className="space-y-1 mb-4">
-                        <h3 className="text-base font-outfit font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                        <h3 className="text-base font-outfit font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase">
                           {candidate.full_name}
                         </h3>
                         <p className="text-xs font-semibold text-slate-500 truncate flex items-center gap-1">
@@ -256,13 +314,15 @@ const ServiceDeliveryManagement = () => {
 
                       <div className="space-y-1.5 p-3 bg-slate-50 rounded-2xl border border-slate-100 mb-4">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-600 truncate">12/12 Delivered • PC verified</span>
-                          <span className="font-black text-emerald-600">100%</span>
+                          <span className="font-bold text-slate-600 truncate">{step}/9 Delivered • {stepObj.shortDesc}</span>
+                          <span className={`font-black ${isComplete ? 'text-emerald-600' : 'text-blue-600'}`}>
+                            {Math.round((step / 9) * 100)}%
+                          </span>
                         </div>
                         <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                           <div 
-                            className="h-full rounded-full transition-all bg-gradient-to-r from-violet-600 via-indigo-600 to-emerald-500"
-                            style={{ width: '100%' }}
+                            className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-400"
+                            style={{ width: `${(step / 9) * 100}%` }}
                           />
                         </div>
                       </div>
@@ -270,7 +330,7 @@ const ServiceDeliveryManagement = () => {
 
                     <button
                       onClick={() => handleSelectCandidate(candidate)}
-                      className="w-full py-2.5 px-4 rounded-xl bg-slate-900 text-white hover:bg-blue-600 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all"
+                      className="w-full py-2.5 px-4 rounded-xl bg-slate-900 text-white hover:bg-blue-600 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-sm"
                     >
                       View Live Stepper <ChevronRight className="w-4 h-4" />
                     </button>
@@ -281,107 +341,147 @@ const ServiceDeliveryManagement = () => {
           )}
         </div>
       ) : (
-        /* EXACT SCREENSHOT TIMELINE VIEW IN ADMIN */
+        /* EXACT SCREENSHOT TIMELINE VIEW IN ADMIN (9 CLICKABLE POINTS) */
         selectedCandidate && (
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <button
                 onClick={() => setViewMode('directory')}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white hover:bg-slate-100 text-slate-700 text-xs font-black uppercase tracking-wider border border-slate-200 shadow-sm transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 text-xs font-black uppercase tracking-wider border border-slate-200 shadow-sm transition-all group"
               >
-                <ArrowLeft className="w-4 h-4" /> Back to Candidate Cards
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> BACK TO CANDIDATE CARDS
               </button>
             </div>
 
-            {/* AESTHETIC SCREENSHOT CONTAINER */}
-            <div className="relative bg-white/90 backdrop-blur-2xl rounded-[2rem] border border-white/90 p-6 sm:p-9 shadow-[0_20px_50px_rgba(109,40,217,0.06)] space-y-8 overflow-hidden">
+            {/* EXACT SCREENSHOT CONTAINER */}
+            <div className="relative bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-12 shadow-[0_10px_40px_rgba(0,0,0,0.04)] space-y-10 overflow-hidden">
               
-              {/* Ambient Brand Glow */}
-              <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-violet-500/5 via-indigo-500/5 to-emerald-500/5 rounded-full blur-3xl pointer-events-none -z-0" />
-              
-              <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-slate-100/90">
+              <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                
+                {/* Left: Avatar and Candidate Info */}
                 <div className="flex items-center gap-4 sm:gap-5">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-slate-100 border-2 border-white ring-2 ring-violet-500/20 shadow-lg shadow-violet-500/10 flex items-center justify-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-slate-200/70 border border-slate-300/40 ring-4 ring-purple-100/60 shadow-sm flex items-center justify-center">
                     {selectedCandidate.profile_photo_url ? (
                       <img src={selectedCandidate.profile_photo_url} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-violet-600 via-indigo-600 to-emerald-600 flex items-center justify-center text-white font-black text-2xl shadow-inner">
-                        {(selectedCandidate.full_name || 'C').charAt(0).toUpperCase()}
+                      <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold text-2xl tracking-wide">
+                        {getInitials(selectedCandidate.full_name)}
                       </div>
                     )}
                   </div>
 
                   <div className="space-y-0.5">
-                    <h2 className="text-xl sm:text-2xl font-outfit font-black text-slate-900 tracking-tight">
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">
                       {selectedCandidate.full_name}
                     </h2>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-500 flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-violet-500/70" /> {selectedCandidate.email}
+                    <p className="text-xs sm:text-sm font-medium text-slate-400 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-slate-400" /> {selectedCandidate.email}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between lg:justify-end gap-4 w-full lg:w-auto">
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-outfit font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 tracking-tight">
+                {/* Middle: Service Delivery Title */}
+                <div className="text-center lg:px-4">
+                  <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
                     Service Delivery
                   </h1>
+                </div>
 
-                      {/* Status Pill Badge with Logo Color Accent - Always Completed */}
-                      <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-300/60 px-4 py-1.5 rounded-full shadow-sm">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse" />
-                          <span className="text-[11px] sm:text-xs font-black text-emerald-700 tracking-wide whitespace-nowrap">
-                            Service Delivery Completed
-                          </span>
-                        </div>
-                      </div>
+                {/* Right: Status Pill Badge */}
+                <div className="flex items-center">
+                  <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border shadow-sm transition-all duration-300 ${
+                    isSelectedCompleted 
+                      ? 'bg-emerald-50/50 border-emerald-300/70' 
+                      : 'bg-blue-50/50 border-blue-300/70'
+                  }`}>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${
+                        isSelectedCompleted 
+                          ? 'bg-emerald-500' 
+                          : 'bg-blue-500 animate-pulse'
+                      }`} />
+                      <span className={`text-xs font-bold tracking-wide whitespace-nowrap ${
+                        isSelectedCompleted ? 'text-emerald-700' : 'text-blue-700'
+                      }`}>
+                        {isSelectedCompleted ? 'Service Delivery Completed' : `In Progress • Step ${activeStep} of 9`}
+                      </span>
                     </div>
                   </div>
+                </div>
 
-                  {/* 12-STEP HORIZONTAL TRACK (PERMANENTLY 100% COMPLETED) */}
-                  <div className="relative z-10 pt-1">
-                    <div className="relative pb-4 overflow-x-auto no-scrollbar">
-                      <div className="min-w-[940px] relative py-5 px-3">
-                        <div className="absolute top-[48px] left-6 right-6 h-[3px] bg-slate-200/80 rounded-full -z-0">
+              </div>
+
+              {/* 9-STEP HORIZONTAL TRACK (EXACT SCREENSHOT FIDELITY & CLICKABLE) */}
+              <div className="relative z-10 pt-4">
+                <div className="relative pb-4 overflow-x-auto no-scrollbar">
+                  <div className="min-w-[860px] relative py-4 px-2">
+                    
+                    {/* Continuous Track Line */}
+                    <div className="absolute top-[51px] left-[5.55%] right-[5.55%] h-[3px] bg-slate-200/90 rounded-full -z-0">
+                      <div 
+                        className="h-full bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-400 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${Math.max(0, Math.min(100, ((activeStep - 1) / 8) * 100))}%` }}
+                      />
+                    </div>
+
+                    {/* 9 Milestones Grid */}
+                    <div className="grid grid-cols-9 relative z-10">
+                      {SERVICE_DELIVERY_STEPS.map((step) => {
+                        const isCompleted = step.id <= activeStep;
+                        const isCurrent = step.id === activeStep;
+
+                        return (
                           <div 
-                            className="h-full bg-gradient-to-r from-violet-600 via-indigo-600 to-emerald-500 rounded-full transition-all duration-700 ease-out shadow-[0_0_12px_rgba(16,185,129,0.4)]"
-                            style={{ width: '100%' }}
-                          />
-                        </div>
+                            key={step.id} 
+                            onClick={() => handleUpdateStep(selectedCandidate.id, step.id)}
+                            className="flex flex-col items-center group cursor-pointer relative z-10 transition-transform duration-200 hover:-translate-y-1"
+                            title={`Click to set completed up to Step ${step.id}: ${step.title}`}
+                          >
+                            {/* Top Number Badge Circle */}
+                            <div className={`w-7 h-7 rounded-full border-[1.5px] flex items-center justify-center text-xs font-black transition-all duration-300 shadow-sm ${
+                              isCompleted 
+                                ? 'bg-white border-emerald-500 text-emerald-600 group-hover:scale-110 group-hover:border-emerald-600' 
+                                : 'bg-white border-slate-300 text-slate-400 group-hover:border-slate-400'
+                            }`}>
+                              {step.id}
+                            </div>
 
-                        <div className="grid grid-cols-12 gap-1.5 relative z-10">
-                          {SERVICE_DELIVERY_STEPS.map((step) => {
-                            return (
-                              <div 
-                                key={step.id} 
-                                className="flex flex-col items-center group cursor-default select-none"
-                              >
-                                {/* Top Step Number Badge */}
-                                <div className="w-6 h-6 rounded-full border-[1.5px] flex items-center justify-center text-[10px] font-black transition-all duration-300 mb-1.5 shadow-sm bg-gradient-to-br from-violet-50 to-emerald-50 border-emerald-500 text-emerald-800 group-hover:scale-115 group-hover:border-violet-500 group-hover:text-violet-700">
-                                  {step.id}
-                                </div>
+                            {/* Vertical Stem Connector */}
+                            <div className={`w-[2px] h-3 transition-colors duration-300 ${
+                              isCompleted ? 'bg-emerald-500' : 'bg-slate-200'
+                            }`} />
 
-                                {/* Checkmark Orb Node - Always Completed */}
-                                <div className="relative my-0.5">
-                                  <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-[0_3px_10px_rgba(16,185,129,0.45)] ring-2 ring-emerald-400/30 transition-all duration-300 group-hover:scale-120">
-                                    <Check className="w-3.5 h-3.5 stroke-[3] drop-shadow-sm text-white" />
-                                  </div>
-                                </div>
-
-                                {/* Step Label Text Underneath Node */}
-                                <div className="mt-2.5 text-center px-0.5">
-                                  <p className="text-[10px] font-bold leading-tight max-w-[78px] mx-auto text-slate-800 group-hover:text-indigo-600 transition-colors duration-200">
-                                    {step.title}
-                                  </p>
-                                </div>
+                            {/* Node Orb on Track */}
+                            <div className="relative my-0">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                isCompleted 
+                                  ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/40 group-hover:scale-115' 
+                                  : 'bg-white border-2 border-slate-300 text-slate-300 group-hover:border-slate-400'
+                              } ${isCurrent && !isSelectedCompleted ? 'ring-4 ring-blue-400/20' : ''}`}>
+                                {isCompleted ? (
+                                  <Check className="w-3.5 h-3.5 stroke-[3] text-white drop-shadow-sm" />
+                                ) : (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                                )}
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                            </div>
+
+                            {/* Step Label Text Underneath Node */}
+                            <div className="mt-2.5 text-center px-1">
+                              <p className={`text-[11px] font-bold leading-tight max-w-[96px] mx-auto transition-colors duration-200 ${
+                                isCompleted ? 'text-slate-800 group-hover:text-emerald-700' : 'text-slate-400 group-hover:text-slate-600'
+                              }`}>
+                                {step.title}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
+                </div>
+              </div>
 
             </div>
           </div>

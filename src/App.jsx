@@ -18,6 +18,7 @@ import Profile from './pages/candidate/Profile';
 import MasterRecovery from './pages/MasterRecovery';
 import ResetPassword from './pages/ResetPassword';
 import AdmissionForm from './pages/candidate/AdmissionForm';
+import ServiceDelivery from './pages/candidate/ServiceDelivery';
 
 function App() {
   const isConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -72,6 +73,14 @@ function App() {
               <ExamPortal />
             </ProtectedRoute>
           } />
+
+          <Route path="/service-delivery" element={
+            <ProtectedRoute roleRequired="candidate">
+              <ServiceDelivery />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/servicedelivery" element={<Navigate to="/service-delivery" replace />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={
